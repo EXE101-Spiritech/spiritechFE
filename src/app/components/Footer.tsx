@@ -1,0 +1,176 @@
+import { Link } from "react-router";
+import {
+  Phone,
+  Mail,
+  MapPin,
+  Facebook,
+  Youtube,
+} from "lucide-react";
+import { Logo } from "./Logo";
+
+export function Footer() {
+  return (
+    <footer
+      style={{
+        backgroundColor: "#3a0e16",
+        fontFamily: "Be Vietnam Pro, sans-serif",
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Brand */}
+          <div>
+            <div className="flex items-center mb-4">
+              <Logo height={60} />
+            </div>
+            <p className="text-white/60 text-sm leading-relaxed mb-4">Cung cấp đồ cúng tâm linh chất lượng cao, đúng phong tục truyền thống Việt Nam. Giao hàng tận nơi.</p>
+            <div className="flex gap-3">
+              <a
+                href="#"
+                className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center transition-colors hover:bg-[#e6bb0c]"
+              >
+                <Facebook className="w-4 h-4 text-white" />
+              </a>
+              <a
+                href="#"
+                className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center transition-colors hover:bg-[#e6bb0c]"
+              >
+                <Youtube className="w-4 h-4 text-white" />
+              </a>
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h4
+              className="text-white mb-4"
+              style={{ fontWeight: 600 }}
+            >
+              Liên kết
+            </h4>
+            <ul className="space-y-2">
+              {[
+                { label: "Trang chủ", to: "/" },
+                { label: "Combo cúng", to: "/combo" },
+                { label: "Sản phẩm", to: "/products" },
+                { label: "Hướng dẫn cúng", to: "/guide" },
+                { label: "Giới thiệu", to: "/about" },
+              ].map((link) => (
+                <li key={link.to}>
+                  <Link
+                    to={link.to}
+                    className="text-white/60 text-sm transition-colors hover:text-[#e6bb0c]"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Categories */}
+          <div>
+            <h4
+              className="text-white mb-4"
+              style={{ fontWeight: 600 }}
+            >
+              Danh mục sản phẩm
+            </h4>
+            <ul className="space-y-2">
+              {[
+                "Nhang - Nến",
+                "Vàng mã",
+                "Bát hương - Lư hương",
+                "Đồ thờ",
+                ].map((cat) => (
+                <li key={cat}>
+                  <Link
+                    to={`/products?category=${encodeURIComponent(cat)}`}
+                    className="text-white/60 text-sm transition-colors hover:text-[#e6bb0c]"
+                  >
+                    {cat}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4
+              className="text-white mb-4"
+              style={{ fontWeight: 600 }}
+            >
+              Liên hệ
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 text-white/60 text-sm">
+                <MapPin
+                  className="w-4 h-4 mt-0.5 flex-shrink-0"
+                  style={{ color: "#e6bb0c" }}
+                />
+                <span>
+                  123 Đinh Tiên Hoàng, P. Đa Kao, Q.1, TP.HCM
+                </span>
+              </div>
+              <div className="flex items-center gap-3 text-white/60 text-sm">
+                <Phone
+                  className="w-4 h-4 flex-shrink-0"
+                  style={{ color: "#e6bb0c" }}
+                />
+                <span>0800 123 456</span>
+              </div>
+              <div className="flex items-center gap-3 text-white/60 text-sm">
+                <Mail
+                  className="w-4 h-4 flex-shrink-0"
+                  style={{ color: "#e6bb0c" }}
+                />
+                <span>gocannhien@gmail.com</span>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-white/5 rounded-lg">
+              <p
+                className="text-xs mb-1"
+                style={{ color: "#e6bb0c", fontWeight: 600 }}
+              >
+                Giờ hoạt động
+              </p>
+              <p className="text-white/60 text-xs">
+                Thứ 2 - Thứ 7: 8:00 - 20:00
+              </p>
+              <p className="text-white/60 text-xs">
+                Chủ nhật: 9:00 - 18:00
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-white/40 text-xs">
+            © 2026 Góc an nhiên.
+          </p>
+          <div className="flex gap-4">
+            <a
+              href="#"
+              className="text-white/40 hover:text-white/70 text-xs transition-colors"
+            >
+              Chính sách bảo mật
+            </a>
+            <a
+              href="#"
+              className="text-white/40 hover:text-white/70 text-xs transition-colors"
+            >
+              Điều khoản dịch vụ
+            </a>
+            <a
+              href="#"
+              className="text-white/40 hover:text-white/70 text-xs transition-colors"
+            >
+              Chính sách đổi trả
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
