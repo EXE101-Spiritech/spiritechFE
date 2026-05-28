@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    /* Thêm dòng này vào đầu compilerOptions để tắt cảnh báo baseUrl */
+    "ignoreDeprecations": "6.0",
+    
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Cấu hình Path Alias đồng bộ với Vite */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "figma:asset/*": ["./src/assets/*"]
+    }
+  },
+  "include": ["src"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}
