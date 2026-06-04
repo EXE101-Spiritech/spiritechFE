@@ -24,13 +24,7 @@ import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../data";
 
 // ─── VietQR Component ─────────────────────────────────────────────────────────
-function VietQR({
-  amount,
-  info,
-}: {
-  amount: number;
-  info: string;
-}) {
+function VietQR({ amount, info }: { amount: number; info: string }) {
   const BANK_ID = "VCB";
   const ACCOUNT_NO = "1234567890";
   const ACCOUNT_NAME = "NGUYEN TAM LINH";
@@ -47,22 +41,10 @@ function VietQR({
       >
         {/* Corner accents */}
         {[
-          [
-            "top-2 left-2",
-            "border-t-2 border-l-2 rounded-tl-md",
-          ],
-          [
-            "top-2 right-2",
-            "border-t-2 border-r-2 rounded-tr-md",
-          ],
-          [
-            "bottom-2 left-2",
-            "border-b-2 border-l-2 rounded-bl-md",
-          ],
-          [
-            "bottom-2 right-2",
-            "border-b-2 border-r-2 rounded-br-md",
-          ],
+          ["top-2 left-2", "border-t-2 border-l-2 rounded-tl-md"],
+          ["top-2 right-2", "border-t-2 border-r-2 rounded-tr-md"],
+          ["bottom-2 left-2", "border-b-2 border-l-2 rounded-bl-md"],
+          ["bottom-2 right-2", "border-b-2 border-r-2 rounded-br-md"],
         ].map(([pos, border]) => (
           <div
             key={pos}
@@ -81,10 +63,7 @@ function VietQR({
         />
       </div>
       <div className="text-center space-y-0.5">
-        <p
-          className="text-sm text-gray-600"
-          style={{ fontWeight: 600 }}
-        >
+        <p className="text-sm text-gray-600" style={{ fontWeight: 600 }}>
           Quét mã để chuyển khoản
         </p>
         <p className="text-xs text-gray-400">
@@ -376,12 +355,7 @@ const SHIPPING_METHODS: ShippingMethod[] = [
 ];
 
 // ─── Stepper ──────────────────────────────────────────────────────────────────
-const STEPS = [
-  "Địa chỉ",
-  "Vận chuyển",
-  "Thanh toán",
-  "Xác nhận",
-];
+const STEPS = ["Địa chỉ", "Vận chuyển", "Thanh toán", "Xác nhận"];
 
 function Stepper({ step }: { step: number }) {
   return (
@@ -393,24 +367,14 @@ function Stepper({ step }: { step: number }) {
               className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all"
               style={{
                 backgroundColor:
-                  i < step
-                    ? "#cc323f"
-                    : i === step
-                      ? "#cc323f"
-                      : "#e2e8f0",
+                  i < step ? "#cc323f" : i === step ? "#cc323f" : "#e2e8f0",
                 color: i <= step ? "white" : "#94a3b8",
                 fontWeight: 600,
                 boxShadow:
-                  i === step
-                    ? "0 0 0 3px rgba(204,50,63,0.2)"
-                    : "none",
+                  i === step ? "0 0 0 3px rgba(204,50,63,0.2)" : "none",
               }}
             >
-              {i < step ? (
-                <CheckCircle className="w-4 h-4" />
-              ) : (
-                i + 1
-              )}
+              {i < step ? <CheckCircle className="w-4 h-4" /> : i + 1}
             </div>
             <span
               className="text-xs mt-1 hidden sm:block"
@@ -426,8 +390,7 @@ function Stepper({ step }: { step: number }) {
             <div
               className="w-12 sm:w-16 h-0.5 mx-1 mt-[-10px] sm:mt-[-18px] transition-all"
               style={{
-                backgroundColor:
-                  i < step ? "#cc323f" : "#e2e8f0",
+                backgroundColor: i < step ? "#cc323f" : "#e2e8f0",
               }}
             />
           )}
@@ -459,35 +422,30 @@ interface FormErrors {
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(0);
-  const autoProvince = user?.address
+  const autoProvince = profile?.address
     ? PROVINCES.find((p) =>
-        user.address
+        profile.address
           .toLowerCase()
           .includes(
-            p.name
-              .toLowerCase()
-              .replace("tp. ", "")
-              .replace("tỉnh ", ""),
+            p.name.toLowerCase().replace("tp. ", "").replace("tỉnh ", ""),
           ),
       )
     : undefined;
 
   const [form, setForm] = useState<ShippingForm>({
-    name: user?.name || "",
-    phone: user?.phone || "",
+    name: profile?.name || "",
+    phone: profile?.phone || "",
     province: autoProvince?.code || "",
     district: "",
     ward: "",
-    address: user?.address || "",
+    address: profile?.address || "",
     notes: "",
   });
-  const [selectedMethod, setSelectedMethod] = useState<
-    "standard" | "sameday"
-  >("standard");
+  const [selectedMethod, setSelectedMethod] = useState<string>("standard");
   const [payment, setPayment] = useState<"cod" | "bank">("cod");
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -504,63 +462,42 @@ export default function Checkout() {
     phone: "",
     address: "",
   });
-  const [guestPayment, setGuestPayment] = useState<
-    "cod" | "bank"
-  >("cod");
+  const [guestPayment, setGuestPayment] = useState<"cod" | "bank">("cod");
   const [guestShippingMethod, setGuestShippingMethod] = useState<
     "standard" | "sameday"
   >("standard");
-  const [guestErrors, setGuestErrors] = useState<
-    Record<string, string>
-  >({});
+  const [guestErrors, setGuestErrors] = useState<Record<string, string>>({});
 
   // Derived
-  const selectedProvince = PROVINCES.find(
-    (p) => p.code === form.province,
-  );
-  const zone: ShippingZone =
-    selectedProvince?.zone || "province";
+  const selectedProvince = PROVINCES.find((p) => p.code === form.province);
+  const zone: ShippingZone = selectedProvince?.zone || "province";
   const availableMethods = SHIPPING_METHODS.filter((m) =>
     m.zones.includes(zone),
   );
 
   useEffect(() => {
     setForm((prev) => ({ ...prev, district: "", ward: "" }));
-    if (
-      !availableMethods.find((m) => m.id === selectedMethod)
-    ) {
+    if (!availableMethods.find((m) => m.id === selectedMethod)) {
       setSelectedMethod("standard");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.province]);
 
-  const getShippingFee = (
-    methodId: "standard" | "express" | "sameday",
-  ) => {
-    const method = SHIPPING_METHODS.find(
-      (m) => m.id === methodId,
-    )!;
+  const getShippingFee = (methodId: string) => {
+    const method = SHIPPING_METHODS.find((m) => m.id === methodId)!;
     if (!selectedProvince) return method.baseFee["province"];
     const base = method.baseFee[zone];
-    if (
-      method.freeThreshold &&
-      totalPrice >= method.freeThreshold
-    )
-      return 0;
+    if (method.freeThreshold && totalPrice >= method.freeThreshold) return 0;
     if (
       method.discountThreshold &&
       totalPrice >= method.discountThreshold.amount
     ) {
-      return Math.round(
-        base * (1 - method.discountThreshold.discount),
-      );
+      return Math.round(base * (1 - method.discountThreshold.discount));
     }
     return base;
   };
 
-  const shippingFee = form.province
-    ? getShippingFee(selectedMethod)
-    : 0;
+  const shippingFee = form.province ? getShippingFee(selectedMethod) : 0;
   const grandTotal = totalPrice + shippingFee;
 
   // ─── Validation ──────────────────────────────────────────────────────────────
@@ -569,12 +506,9 @@ export default function Checkout() {
     if (!form.name.trim()) e.name = "Vui lòng nhập họ tên";
     if (!form.phone.trim() || !/^0\d{9}$/.test(form.phone))
       e.phone = "Số điện thoại không hợp lệ (VD: 0912345678)";
-    if (!form.province)
-      e.province = "Vui lòng chọn tỉnh / thành phố";
-    if (!form.district)
-      e.district = "Vui lòng chọn quận / huyện";
-    if (!form.address.trim())
-      e.address = "Vui lòng nhập số nhà, tên đường";
+    if (!form.province) e.province = "Vui lòng chọn tỉnh / thành phố";
+    if (!form.district) e.district = "Vui lòng chọn quận / huyện";
+    if (!form.address.trim()) e.address = "Vui lòng nhập số nhà, tên đường";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -595,8 +529,7 @@ export default function Checkout() {
   const copyToClipboard = (text: string, key: string) => {
     const el = document.createElement("textarea");
     el.value = text;
-    el.style.cssText =
-      "position:fixed;top:-9999px;left:-9999px;opacity:0";
+    el.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
     document.body.appendChild(el);
     el.focus();
     el.select();
@@ -624,11 +557,17 @@ export default function Checkout() {
 
   const handleSubmit = async () => {
     // Kiểm tra thông tin đã đủ chưa
-    if (!form.name.trim() || !form.phone.trim() || !form.province || !form.district || !form.address.trim()) {
+    if (
+      !form.name.trim() ||
+      !form.phone.trim() ||
+      !form.province ||
+      !form.district ||
+      !form.address.trim()
+    ) {
       alert("Bạn cần nhập đủ thông tin thanh toán");
       return;
     }
-    
+
     setLoading(true);
     await new Promise((r) => setTimeout(r, 1400));
     clearCart();
@@ -647,20 +586,14 @@ export default function Checkout() {
     const now = new Date();
     const dateStr = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
     const eta = new Date(now);
-    if (selectedMethod === "sameday")
-      eta.setHours(eta.getHours() + 4);
-    else
-      eta.setDate(
-        eta.getDate() + (selectedMethod === "express" ? 2 : 5),
-      );
+    if (selectedMethod === "sameday") eta.setHours(eta.getHours() + 4);
+    else eta.setDate(eta.getDate() + (selectedMethod === "express" ? 2 : 5));
     const etaStr =
       selectedMethod === "sameday"
         ? `Hôm nay trước ${String(eta.getHours()).padStart(2, "0")}:00`
         : `${String(eta.getDate()).padStart(2, "0")}/${String(eta.getMonth() + 1).padStart(2, "0")}/${eta.getFullYear()}`;
     try {
-      const existing = JSON.parse(
-        localStorage.getItem("userOrders") || "[]",
-      );
+      const existing = JSON.parse(localStorage.getItem("userOrders") || "[]");
       localStorage.setItem(
         "userOrders",
         JSON.stringify([
@@ -700,7 +633,7 @@ export default function Checkout() {
   };
 
   // ─── Guest checkout handlers ───────────────────────────────────────────────
-  const GUEST_SHIPPING = guestShippingMethod === 'sameday' ? 45000 : 30000;
+  const GUEST_SHIPPING = guestShippingMethod === "sameday" ? 45000 : 30000;
   const guestTotal = totalPrice + GUEST_SHIPPING;
 
   const validateGuest = () => {
@@ -711,22 +644,19 @@ export default function Checkout() {
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestForm.email)
     )
       e.email = "Email không hợp lệ";
-    if (
-      !guestForm.phone.trim() ||
-      !/^0\d{9}$/.test(guestForm.phone)
-    )
+    if (!guestForm.phone.trim() || !/^0\d{9}$/.test(guestForm.phone))
       e.phone = "Số điện thoại không hợp lệ (VD: 0912345678)";
     if (!guestForm.address.trim())
       e.address = "Vui lòng nhập địa chỉ giao hàng";
-    
+
     setGuestErrors(e);
-    
+
     // Nếu có lỗi, hiển thị thông báo
     if (Object.keys(e).length > 0) {
       alert("Bạn cần nhập đủ thông tin thanh toán");
       return false;
     }
-    
+
     return true;
   };
 
@@ -744,16 +674,14 @@ export default function Checkout() {
     const now = new Date();
     const dateStr = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
     const eta = new Date(now);
-    if (guestShippingMethod === 'sameday') {
+    if (guestShippingMethod === "sameday") {
       eta.setHours(eta.getHours() + 2);
     } else {
       eta.setHours(eta.getHours() + 4);
     }
-    const etaStr = `Hôm nay trước ${String(eta.getHours()).padStart(2, '0')}:00`;
+    const etaStr = `Hôm nay trước ${String(eta.getHours()).padStart(2, "0")}:00`;
     try {
-      const existing = JSON.parse(
-        localStorage.getItem("userOrders") || "[]",
-      );
+      const existing = JSON.parse(localStorage.getItem("userOrders") || "[]");
       localStorage.setItem(
         "userOrders",
         JSON.stringify([
@@ -799,13 +727,10 @@ export default function Checkout() {
   const gfFocus = (field: string) => ({
     onFocus: (e: React.FocusEvent<HTMLInputElement>) => {
       e.target.style.borderColor = "#cc323f";
-      e.target.style.boxShadow =
-        "0 0 0 3px rgba(204,50,63,0.1)";
+      e.target.style.boxShadow = "0 0 0 3px rgba(204,50,63,0.1)";
     },
     onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
-      e.target.style.borderColor = guestErrors[field]
-        ? "#fca5a5"
-        : "#e2e8f0";
+      e.target.style.borderColor = guestErrors[field] ? "#fca5a5" : "#e2e8f0";
       e.target.style.boxShadow = "none";
     },
   });
@@ -817,14 +742,9 @@ export default function Checkout() {
         className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center"
       >
         <p className="text-gray-500 mb-4">
-          Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi thanh
-          toán.
+          Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi thanh toán.
         </p>
-        <Link
-          to="/products"
-          className="underline"
-          style={{ color: "#cc323f" }}
-        >
+        <Link to="/products" className="underline" style={{ color: "#cc323f" }}>
           Tiếp tục mua sắm
         </Link>
       </div>
@@ -838,20 +758,15 @@ export default function Checkout() {
   const focusHandlers = (errField?: keyof FormErrors) => ({
     onFocus: (
       e: React.FocusEvent<
-        | HTMLInputElement
-        | HTMLSelectElement
-        | HTMLTextAreaElement
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
       >,
     ) => {
       e.target.style.borderColor = "#cc323f";
-      e.target.style.boxShadow =
-        "0 0 0 3px rgba(204,50,63,0.1)";
+      e.target.style.boxShadow = "0 0 0 3px rgba(204,50,63,0.1)";
     },
     onBlur: (
       e: React.FocusEvent<
-        | HTMLInputElement
-        | HTMLSelectElement
-        | HTMLTextAreaElement
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
       >,
     ) => {
       e.target.style.borderColor =
@@ -871,15 +786,12 @@ export default function Checkout() {
           fontSize: "1.2rem",
         }}
       >
-        <MapPin
-          className="w-5 h-5"
-          style={{ color: "#cc323f" }}
-        />
+        <MapPin className="w-5 h-5" style={{ color: "#cc323f" }} />
         Địa chỉ giao hàng
       </h2>
 
       {/* Auto-fill banner */}
-      {user && (
+      {profile && (
         <div
           className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 mb-5"
           style={{
@@ -899,22 +811,22 @@ export default function Checkout() {
                 className="text-sm truncate"
                 style={{ fontWeight: 600, color: "#3a0e16" }}
               >
-                {user.name}
+                {profile.name}
               </p>
               <p className="text-xs text-gray-500 truncate">
-                {user.phone} · {user.email}
+                {profile.phone} · {profile.email}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => {
-              update("name", user.name);
-              update("phone", user.phone);
-              if (user.address) {
-                update("address", user.address);
+              update("name", profile.name);
+              update("phone", profile.phone);
+              if (profile.address) {
+                update("address", profile.address);
                 const matched = PROVINCES.find((p) =>
-                  user.address
+                  profile.address
                     .toLowerCase()
                     .includes(
                       p.name
@@ -956,9 +868,7 @@ export default function Checkout() {
             {...focusHandlers("name")}
           />
           {errors.name && (
-            <p className="text-red-500 text-xs mt-1">
-              {errors.name}
-            </p>
+            <p className="text-red-500 text-xs mt-1">{errors.name}</p>
           )}
         </div>
         <div>
@@ -978,9 +888,7 @@ export default function Checkout() {
             {...focusHandlers("phone")}
           />
           {errors.phone && (
-            <p className="text-red-500 text-xs mt-1">
-              {errors.phone}
-            </p>
+            <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
           )}
         </div>
         <div className="sm:col-span-2">
@@ -993,16 +901,12 @@ export default function Checkout() {
           <div className="relative">
             <select
               value={form.province}
-              onChange={(e) =>
-                update("province", e.target.value)
-              }
+              onChange={(e) => update("province", e.target.value)}
               className="w-full border rounded-xl px-4 py-3 outline-none bg-gray-50 transition-all appearance-none"
               style={inp(!!errors.province)}
               {...focusHandlers("province")}
             >
-              <option value="">
-                -- Chọn tỉnh / thành phố --
-              </option>
+              <option value="">-- Chọn tỉnh / thành phố --</option>
               {PROVINCES.map((p) => (
                 <option key={p.code} value={p.code}>
                   {p.name}
@@ -1012,9 +916,7 @@ export default function Checkout() {
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
           {errors.province && (
-            <p className="text-red-500 text-xs mt-1">
-              {errors.province}
-            </p>
+            <p className="text-red-500 text-xs mt-1">{errors.province}</p>
           )}
         </div>
         <div>
@@ -1027,9 +929,7 @@ export default function Checkout() {
           <div className="relative">
             <select
               value={form.district}
-              onChange={(e) =>
-                update("district", e.target.value)
-              }
+              onChange={(e) => update("district", e.target.value)}
               disabled={!form.province}
               className="w-full border rounded-xl px-4 py-3 outline-none bg-gray-50 transition-all appearance-none disabled:opacity-50"
               style={inp(!!errors.district)}
@@ -1045,9 +945,7 @@ export default function Checkout() {
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
           {errors.district && (
-            <p className="text-red-500 text-xs mt-1">
-              {errors.district}
-            </p>
+            <p className="text-red-500 text-xs mt-1">{errors.district}</p>
           )}
         </div>
         <div>
@@ -1055,8 +953,7 @@ export default function Checkout() {
             className="block text-sm text-gray-700 mb-1.5"
             style={{ fontWeight: 500 }}
           >
-            Phường / Xã{" "}
-            <span className="text-gray-400">(tuỳ chọn)</span>
+            Phường / Xã <span className="text-gray-400">(tuỳ chọn)</span>
           </label>
           <input
             type="text"
@@ -1084,9 +981,7 @@ export default function Checkout() {
             {...focusHandlers("address")}
           />
           {errors.address && (
-            <p className="text-red-500 text-xs mt-1">
-              {errors.address}
-            </p>
+            <p className="text-red-500 text-xs mt-1">{errors.address}</p>
           )}
         </div>
         <div className="sm:col-span-2">
@@ -1094,8 +989,7 @@ export default function Checkout() {
             className="block text-sm text-gray-700 mb-1.5"
             style={{ fontWeight: 500 }}
           >
-            Ghi chú đơn hàng{" "}
-            <span className="text-gray-400">(tuỳ chọn)</span>
+            Ghi chú đơn hàng <span className="text-gray-400">(tuỳ chọn)</span>
           </label>
           <textarea
             value={form.notes}
@@ -1121,19 +1015,14 @@ export default function Checkout() {
           fontSize: "1.2rem",
         }}
       >
-        <Truck
-          className="w-5 h-5"
-          style={{ color: "#cc323f" }}
-        />
+        <Truck className="w-5 h-5" style={{ color: "#cc323f" }} />
         Phương thức vận chuyển
       </h2>
       {selectedProvince && (
         <p className="text-sm text-gray-500 mb-5">
           Giao đến:{" "}
           <strong className="text-gray-700">
-            {[form.district, selectedProvince.name]
-              .filter(Boolean)
-              .join(", ")}
+            {[form.district, selectedProvince.name].filter(Boolean).join(", ")}
           </strong>
         </p>
       )}
@@ -1168,15 +1057,10 @@ export default function Checkout() {
                 {method.icon}
               </span>
               <div className="flex-1 min-w-0">
-                <p
-                  className="text-gray-800"
-                  style={{ fontWeight: 600 }}
-                >
+                <p className="text-gray-800" style={{ fontWeight: 600 }}>
                   {method.label}
                 </p>
-                <p className="text-gray-500 text-sm mt-0.5">
-                  {method.desc}
-                </p>
+                <p className="text-gray-500 text-sm mt-0.5">{method.desc}</p>
               </div>
               <div className="text-right flex-shrink-0">
                 {fee === 0 ? (
@@ -1219,11 +1103,8 @@ export default function Checkout() {
         >
           <span>🎁</span>
           <span style={{ color: "#92650a" }}>
-            Mua thêm{" "}
-            <strong>
-              {formatCurrency(500000 - totalPrice)}
-            </strong>{" "}
-            để được freeship tiêu chuẩn!
+            Mua thêm <strong>{formatCurrency(500000 - totalPrice)}</strong> để
+            được freeship tiêu chuẩn!
           </span>
         </div>
       )}
@@ -1243,14 +1124,11 @@ export default function Checkout() {
             fontSize: "1.2rem",
           }}
         >
-          <Lock
-            className="w-5 h-5"
-            style={{ color: "#cc323f" }}
-          />
+          <Lock className="w-5 h-5" style={{ color: "#cc323f" }} />
           Phương thức thanh toán
           <span className="ml-auto flex items-center gap-1 text-xs text-gray-400">
-            <Shield className="w-3.5 h-3.5 text-green-500" />{" "}
-            Bảo mật SSL 256-bit
+            <Shield className="w-3.5 h-3.5 text-green-500" /> Bảo mật SSL
+            256-bit
           </span>
         </h2>
 
@@ -1280,12 +1158,9 @@ export default function Checkout() {
               onClick={() => setPayment(opt.id)}
               className="flex flex-col items-center gap-1.5 py-4 px-2 rounded-xl border-2 transition-all"
               style={{
-                borderColor:
-                  payment === opt.id ? "#cc323f" : "#e2e8f0",
-                backgroundColor:
-                  payment === opt.id ? "#fdf4f3" : "white",
-                color:
-                  payment === opt.id ? "#cc323f" : "#64748b",
+                borderColor: payment === opt.id ? "#cc323f" : "#e2e8f0",
+                backgroundColor: payment === opt.id ? "#fdf4f3" : "white",
+                color: payment === opt.id ? "#cc323f" : "#64748b",
               }}
             >
               {opt.icon}
@@ -1313,10 +1188,7 @@ export default function Checkout() {
               <Truck className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <p
-                className="text-gray-800"
-                style={{ fontWeight: 600 }}
-              >
+              <p className="text-gray-800" style={{ fontWeight: 600 }}>
                 Thanh toán khi nhận hàng
               </p>
               <p className="text-gray-500 text-sm">
@@ -1342,9 +1214,7 @@ export default function Checkout() {
             }}
           >
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">
-                Tổng tiền cần chuẩn bị
-              </span>
+              <span className="text-gray-500">Tổng tiền cần chuẩn bị</span>
               <span
                 style={{
                   color: "#cc323f",
@@ -1356,15 +1226,14 @@ export default function Checkout() {
               </span>
             </div>
             <p className="text-gray-400 text-xs">
-              Nhân viên giao hàng sẽ thu tiền mặt khi giao đơn
-              thành công.
+              Nhân viên giao hàng sẽ thu tiền mặt khi giao đơn thành công.
             </p>
           </div>
           <div className="mt-4 flex items-start gap-2 text-xs text-gray-500">
             <Shield className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
             <span>
-              Kiểm tra hàng trước khi thanh toán. Từ chối nhận
-              nếu hàng bị hư hỏng.
+              Kiểm tra hàng trước khi thanh toán. Từ chối nhận nếu hàng bị hư
+              hỏng.
             </span>
           </div>
         </div>
@@ -1421,36 +1290,24 @@ export default function Checkout() {
                 key={row.key}
                 className="flex items-center justify-between px-4 py-3 text-sm"
                 style={{
-                  backgroundColor:
-                    i % 2 === 0 ? "white" : "#f8fafc",
-                  borderBottom:
-                    i < 4 ? "1px solid #f1f5f9" : "none",
+                  backgroundColor: i % 2 === 0 ? "white" : "#f8fafc",
+                  borderBottom: i < 4 ? "1px solid #f1f5f9" : "none",
                 }}
               >
-                <span className="text-gray-500">
-                  {row.label}
-                </span>
+                <span className="text-gray-500">{row.label}</span>
                 <div className="flex items-center gap-2">
                   <span
                     style={{
                       fontWeight: 600,
-                      color:
-                        row.key === "amount"
-                          ? "#cc323f"
-                          : "#0f172a",
-                      fontFamily:
-                        row.key === "acc"
-                          ? "monospace"
-                          : undefined,
+                      color: row.key === "amount" ? "#cc323f" : "#0f172a",
+                      fontFamily: row.key === "acc" ? "monospace" : undefined,
                     }}
                   >
                     {row.value}
                   </span>
                   <button
                     type="button"
-                    onClick={() =>
-                      copyToClipboard(row.value, row.key)
-                    }
+                    onClick={() => copyToClipboard(row.value, row.key)}
                     className="w-6 h-6 flex items-center justify-center rounded transition-colors hover:bg-gray-100"
                     title="Sao chép"
                   >
@@ -1467,8 +1324,8 @@ export default function Checkout() {
 
           <p className="text-xs text-gray-400 flex items-center gap-1.5 mt-4">
             <Clock className="w-3.5 h-3.5" />
-            Đơn hàng sẽ được xử lý trong 15–30 phút sau khi xác
-            nhận thanh toán (8:00–21:00 mỗi ngày).
+            Đơn hàng sẽ được xử lý trong 15–30 phút sau khi xác nhận thanh toán
+            (8:00–21:00 mỗi ngày).
           </p>
         </div>
       )}
@@ -1502,10 +1359,7 @@ export default function Checkout() {
             fontSize: "1.2rem",
           }}
         >
-          <CheckCircle
-            className="w-5 h-5"
-            style={{ color: "#cc323f" }}
-          />
+          <CheckCircle className="w-5 h-5" style={{ color: "#cc323f" }} />
           Xác nhận đơn hàng
         </h2>
         <div
@@ -1518,19 +1372,12 @@ export default function Checkout() {
           <p className="text-xs text-gray-500 mb-2 flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5" /> Giao đến
           </p>
-          <p
-            className="text-gray-800 text-sm"
-            style={{ fontWeight: 600 }}
-          >
+          <p className="text-gray-800 text-sm" style={{ fontWeight: 600 }}>
             {form.name} — {form.phone}
           </p>
-          <p className="text-gray-600 text-sm mt-0.5">
-            {fullAddress}
-          </p>
+          <p className="text-gray-600 text-sm mt-0.5">{fullAddress}</p>
           {form.notes && (
-            <p className="text-gray-400 text-xs mt-1 italic">
-              "{form.notes}"
-            </p>
+            <p className="text-gray-400 text-xs mt-1 italic">"{form.notes}"</p>
           )}
         </div>
         <div
@@ -1540,27 +1387,18 @@ export default function Checkout() {
             border: "1px solid #e2e8f0",
           }}
         >
-          <span style={{ color: "#cc323f" }}>
-            {shippingMethod.icon}
-          </span>
+          <span style={{ color: "#cc323f" }}>{shippingMethod.icon}</span>
           <div>
-            <p
-              className="text-gray-800 text-sm"
-              style={{ fontWeight: 600 }}
-            >
+            <p className="text-gray-800 text-sm" style={{ fontWeight: 600 }}>
               {shippingMethod.label}
             </p>
-            <p className="text-gray-500 text-xs">
-              {shippingMethod.desc}
-            </p>
+            <p className="text-gray-500 text-xs">{shippingMethod.desc}</p>
           </div>
           <span
             className="ml-auto text-sm"
             style={{ color: "#cc323f", fontWeight: 600 }}
           >
-            {shippingFee === 0
-              ? "Miễn phí"
-              : formatCurrency(shippingFee)}
+            {shippingFee === 0 ? "Miễn phí" : formatCurrency(shippingFee)}
           </span>
         </div>
         <div
@@ -1577,10 +1415,7 @@ export default function Checkout() {
               <Banknote className="w-5 h-5 text-gray-500" />
             )}
             <div className="flex-1">
-              <p
-                className="text-gray-800 text-sm"
-                style={{ fontWeight: 600 }}
-              >
+              <p className="text-gray-800 text-sm" style={{ fontWeight: 600 }}>
                 {paymentLabel}
               </p>
               {payment === "bank" && (
@@ -1596,9 +1431,7 @@ export default function Checkout() {
           style={{ color: "#64748b" }}
         >
           <Shield className="w-4 h-4 text-green-500" />
-          <span>
-            Đơn hàng được bảo vệ bởi chính sách đổi trả 7 ngày
-          </span>
+          <span>Đơn hàng được bảo vệ bởi chính sách đổi trả 7 ngày</span>
         </div>
       </div>
     );
@@ -1619,22 +1452,15 @@ export default function Checkout() {
       </h2>
       <div className="space-y-3 mb-4 max-h-48 overflow-y-auto">
         {items.map((item) => (
-          <div
-            key={item.id}
-            className="flex gap-3 items-center"
-          >
+          <div key={item.id} className="flex gap-3 items-center">
             <img
               src={item.image}
               alt={item.name}
               className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
             />
             <div className="flex-1 min-w-0">
-              <p className="text-gray-800 text-sm truncate">
-                {item.name}
-              </p>
-              <p className="text-gray-400 text-xs">
-                x{item.quantity}
-              </p>
+              <p className="text-gray-800 text-sm truncate">{item.name}</p>
+              <p className="text-gray-400 text-xs">x{item.quantity}</p>
             </div>
             <span
               className="text-sm flex-shrink-0"
@@ -1648,21 +1474,15 @@ export default function Checkout() {
       <div className="border-t border-gray-100 pt-4 space-y-2">
         <div className="flex justify-between text-sm text-gray-600">
           <span>
-            Tạm tính (
-            {items.reduce((s, i) => s + i.quantity, 0)} sản
-            phẩm)
+            Tạm tính ({items.reduce((s, i) => s + i.quantity, 0)} sản phẩm)
           </span>
-          <span style={{ fontWeight: 600 }}>
-            {formatCurrency(totalPrice)}
-          </span>
+          <span style={{ fontWeight: 600 }}>{formatCurrency(totalPrice)}</span>
         </div>
         <div className="flex justify-between text-sm text-gray-600">
           <span>Phí vận chuyển</span>
           <span style={{ fontWeight: 600 }}>
             {!form.province ? (
-              <span className="text-gray-400">
-                Chọn địa chỉ
-              </span>
+              <span className="text-gray-400">Chọn địa chỉ</span>
             ) : shippingFee === 0 ? (
               <span className="text-green-600">Miễn phí</span>
             ) : (
@@ -1672,9 +1492,7 @@ export default function Checkout() {
         </div>
       </div>
       <div className="border-t border-gray-100 mt-3 pt-4 flex justify-between">
-        <span style={{ fontWeight: 700, color: "#0f172a" }}>
-          Tổng cộng
-        </span>
+        <span style={{ fontWeight: 700, color: "#0f172a" }}>Tổng cộng</span>
         <span
           style={{
             fontWeight: 700,
@@ -1712,8 +1530,7 @@ export default function Checkout() {
             fontWeight: 600,
           }}
           onMouseEnter={(e) => {
-            if (!loading)
-              e.currentTarget.style.backgroundColor = "#ab2534";
+            if (!loading) e.currentTarget.style.backgroundColor = "#ab2534";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = "#cc323f";
@@ -1744,8 +1561,7 @@ export default function Checkout() {
             </>
           ) : (
             <>
-              <CheckCircle className="w-5 h-5" /> Xác nhận đặt
-              hàng
+              <CheckCircle className="w-5 h-5" /> Xác nhận đặt hàng
             </>
           )}
         </button>
@@ -1754,7 +1570,7 @@ export default function Checkout() {
   );
 
   // ─── Guest checkout UI ────────────────────────────────────────────────────────
-  if (!user) {
+  if (!profile) {
     return (
       <div
         style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}
@@ -1782,8 +1598,7 @@ export default function Checkout() {
                   className="absolute inset-0 rounded-full"
                   style={{
                     backgroundColor: "rgba(34,197,94,0.15)",
-                    animation:
-                      "pingOnce 0.8s ease-out 0.1s both",
+                    animation: "pingOnce 0.8s ease-out 0.1s both",
                   }}
                 />
                 <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center relative z-10 shadow-lg">
@@ -1796,8 +1611,7 @@ export default function Checkout() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     style={{
-                      animation:
-                        "drawCheck 0.45s ease-out 0.25s both",
+                      animation: "drawCheck 0.45s ease-out 0.25s both",
                       strokeDasharray: 30,
                       strokeDashoffset: 30,
                     }}
@@ -1907,17 +1721,12 @@ export default function Checkout() {
               <p style={{ fontWeight: 600, color: "#0f172a" }}>
                 Đang xử lý đơn hàng…
               </p>
-              <p className="text-gray-400 text-xs">
-                Vui lòng không tắt trang
-              </p>
+              <p className="text-gray-400 text-xs">Vui lòng không tắt trang</p>
             </div>
           </div>
         )}
 
-        <div
-          className="py-10"
-          style={{ backgroundColor: "#902131" }}
-        >
+        <div className="py-10" style={{ backgroundColor: "#902131" }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <nav className="text-white/60 text-sm mb-3">
               <Link to="/" className="hover:text-white">
@@ -1966,8 +1775,8 @@ export default function Checkout() {
                     Bạn chưa đăng nhập
                   </p>
                   <p className="text-xs text-yellow-700/70 mt-0.5">
-                    Đăng nhập để theo dõi đơn hàng, tích điểm và
-                    thanh toán nhanh hơn.
+                    Đăng nhập để theo dõi đơn hàng, tích điểm và thanh toán
+                    nhanh hơn.
                   </p>
                 </div>
                 <Link
@@ -1993,10 +1802,7 @@ export default function Checkout() {
                     fontSize: "1.2rem",
                   }}
                 >
-                  <User
-                    className="w-5 h-5"
-                    style={{ color: "#cc323f" }}
-                  />
+                  <User className="w-5 h-5" style={{ color: "#cc323f" }} />
                   Thông tin nhận hàng
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2029,9 +1835,7 @@ export default function Checkout() {
                         placeholder="Nguyễn Văn A"
                         className="w-full border rounded-xl pl-10 pr-4 py-3 outline-none bg-gray-50 transition-all"
                         style={{
-                          borderColor: guestErrors.name
-                            ? "#fca5a5"
-                            : "#e2e8f0",
+                          borderColor: guestErrors.name ? "#fca5a5" : "#e2e8f0",
                         }}
                         {...gfFocus("name")}
                       />
@@ -2186,25 +1990,22 @@ export default function Checkout() {
                     fontSize: "1.2rem",
                   }}
                 >
-                  <Truck
-                    className="w-5 h-5"
-                    style={{ color: "#cc323f" }}
-                  />
+                  <Truck className="w-5 h-5" style={{ color: "#cc323f" }} />
                   Phương thức vận chuyển
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     {
-                      id: 'standard' as const,
-                      label: 'Tiêu chuẩn',
-                      time: '3–4 tiếng',
+                      id: "standard" as const,
+                      label: "Tiêu chuẩn",
+                      time: "3–4 tiếng",
                       fee: 30000,
                       icon: <Package className="w-5 h-5" />,
                     },
                     {
-                      id: 'sameday' as const,
-                      label: 'Hỏa tốc',
-                      time: '1–2 tiếng',
+                      id: "sameday" as const,
+                      label: "Hỏa tốc",
+                      time: "1–2 tiếng",
                       fee: 45000,
                       icon: <Clock className="w-5 h-5" />,
                     },
@@ -2220,9 +2021,7 @@ export default function Checkout() {
                             ? "#cc323f"
                             : "#e2e8f0",
                         backgroundColor:
-                          guestShippingMethod === opt.id
-                            ? "#fdf4f3"
-                            : "white",
+                          guestShippingMethod === opt.id ? "#fdf4f3" : "white",
                       }}
                     >
                       <span
@@ -2295,14 +2094,11 @@ export default function Checkout() {
                     fontSize: "1.2rem",
                   }}
                 >
-                  <Lock
-                    className="w-5 h-5"
-                    style={{ color: "#cc323f" }}
-                  />
+                  <Lock className="w-5 h-5" style={{ color: "#cc323f" }} />
                   Phương thức thanh toán
                   <span className="ml-auto flex items-center gap-1 text-xs text-gray-400">
-                    <Shield className="w-3.5 h-3.5 text-green-500" />{" "}
-                    Bảo mật SSL
+                    <Shield className="w-3.5 h-3.5 text-green-500" /> Bảo mật
+                    SSL
                   </span>
                 </h2>
                 <div className="grid grid-cols-2 gap-3 mb-5">
@@ -2334,13 +2130,9 @@ export default function Checkout() {
                       className="flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left"
                       style={{
                         borderColor:
-                          guestPayment === opt.id
-                            ? "#cc323f"
-                            : "#e2e8f0",
+                          guestPayment === opt.id ? "#cc323f" : "#e2e8f0",
                         backgroundColor:
-                          guestPayment === opt.id
-                            ? "#fdf4f3"
-                            : "white",
+                          guestPayment === opt.id ? "#fdf4f3" : "white",
                       }}
                     >
                       <span
@@ -2358,9 +2150,7 @@ export default function Checkout() {
                           style={{
                             fontWeight: 600,
                             color:
-                              guestPayment === opt.id
-                                ? "#cc323f"
-                                : "#0f172a",
+                              guestPayment === opt.id ? "#cc323f" : "#0f172a",
                           }}
                         >
                           {opt.label}
@@ -2373,9 +2163,7 @@ export default function Checkout() {
                         className="ml-auto w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0"
                         style={{
                           borderColor:
-                            guestPayment === opt.id
-                              ? "#cc323f"
-                              : "#cbd5e1",
+                            guestPayment === opt.id ? "#cc323f" : "#cbd5e1",
                         }}
                       >
                         {guestPayment === opt.id && (
@@ -2480,29 +2268,19 @@ export default function Checkout() {
                           key={row.key}
                           className="flex items-center justify-between px-4 py-3 text-sm"
                           style={{
-                            backgroundColor:
-                              i % 2 === 0 ? "white" : "#f8fafc",
-                            borderBottom:
-                              i < 4
-                                ? "1px solid #f1f5f9"
-                                : "none",
+                            backgroundColor: i % 2 === 0 ? "white" : "#f8fafc",
+                            borderBottom: i < 4 ? "1px solid #f1f5f9" : "none",
                           }}
                         >
-                          <span className="text-gray-500">
-                            {row.label}
-                          </span>
+                          <span className="text-gray-500">{row.label}</span>
                           <div className="flex items-center gap-2">
                             <span
                               style={{
                                 fontWeight: 600,
                                 color:
-                                  row.key === "gam"
-                                    ? "#cc323f"
-                                    : "#0f172a",
+                                  row.key === "gam" ? "#cc323f" : "#0f172a",
                                 fontFamily:
-                                  row.key === "ga"
-                                    ? "monospace"
-                                    : undefined,
+                                  row.key === "ga" ? "monospace" : undefined,
                               }}
                             >
                               {row.value}
@@ -2510,10 +2288,7 @@ export default function Checkout() {
                             <button
                               type="button"
                               onClick={() =>
-                                copyToClipboard(
-                                  row.value,
-                                  row.key,
-                                )
+                                copyToClipboard(row.value, row.key)
                               }
                               className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100"
                             >
@@ -2529,8 +2304,8 @@ export default function Checkout() {
                     </div>
                     <p className="text-xs text-gray-400 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" />
-                      Đơn hàng được xử lý trong 15–30 phút sau
-                      khi xác nhận thanh toán.
+                      Đơn hàng được xử lý trong 15–30 phút sau khi xác nhận
+                      thanh toán.
                     </p>
                   </div>
                 )}
@@ -2549,12 +2324,10 @@ export default function Checkout() {
                 }}
                 onMouseEnter={(e) => {
                   if (!loading)
-                    e.currentTarget.style.backgroundColor =
-                      "#ab2534";
+                    e.currentTarget.style.backgroundColor = "#ab2534";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    "#cc323f";
+                  e.currentTarget.style.backgroundColor = "#cc323f";
                 }}
               >
                 {loading ? (
@@ -2582,8 +2355,7 @@ export default function Checkout() {
                   </>
                 ) : (
                   <>
-                    <CheckCircle className="w-5 h-5" /> Đặt hàng
-                    ngay
+                    <CheckCircle className="w-5 h-5" /> Đặt hàng ngay
                   </>
                 )}
               </button>
@@ -2604,10 +2376,7 @@ export default function Checkout() {
                 </h2>
                 <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
                   {items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex gap-3 items-center"
-                    >
+                    <div key={item.id} className="flex gap-3 items-center">
                       <img
                         src={item.image}
                         alt={item.name}
@@ -2628,9 +2397,7 @@ export default function Checkout() {
                           fontWeight: 600,
                         }}
                       >
-                        {formatCurrency(
-                          item.price * item.quantity,
-                        )}
+                        {formatCurrency(item.price * item.quantity)}
                       </span>
                     </div>
                   ))}
@@ -2638,12 +2405,7 @@ export default function Checkout() {
                 <div className="border-t border-gray-100 pt-4 space-y-2">
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>
-                      Tạm tính (
-                      {items.reduce(
-                        (s, i) => s + i.quantity,
-                        0,
-                      )}{" "}
-                      sp)
+                      Tạm tính ({items.reduce((s, i) => s + i.quantity, 0)} sp)
                     </span>
                     <span style={{ fontWeight: 600 }}>
                       {formatCurrency(totalPrice)}
@@ -2652,10 +2414,8 @@ export default function Checkout() {
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Phí vận chuyển</span>
                     <span style={{ fontWeight: 600 }}>
-                      {GUEST_SHIPPING === 0 ? (
-                        <span className="text-green-600">
-                          Miễn phí
-                        </span>
+                      {guestTotal === 0 ? (
+                        <span className="text-green-600">Miễn phí</span>
                       ) : (
                         formatCurrency(GUEST_SHIPPING)
                       )}
@@ -2697,9 +2457,7 @@ export default function Checkout() {
                 </div>
                 <div className="mt-4 flex items-center gap-2 text-xs text-gray-400">
                   <Shield className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-                  <span>
-                    Bảo vệ bởi chính sách đổi trả 7 ngày
-                  </span>
+                  <span>Bảo vệ bởi chính sách đổi trả 7 ngày</span>
                 </div>
               </div>
             </div>
@@ -2714,10 +2472,7 @@ export default function Checkout() {
       style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}
       className="min-h-screen bg-[#f8fafc]"
     >
-      <div
-        className="py-10"
-        style={{ backgroundColor: "#902131" }}
-      >
+      <div className="py-10" style={{ backgroundColor: "#902131" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="text-white/60 text-sm mb-3">
             <Link to="/" className="hover:text-white">
@@ -2791,8 +2546,7 @@ export default function Checkout() {
                     "Đang xử lý..."
                   ) : (
                     <>
-                      <CheckCircle className="w-5 h-5" /> Đặt
-                      hàng
+                      <CheckCircle className="w-5 h-5" /> Đặt hàng
                     </>
                   )}
                 </button>
