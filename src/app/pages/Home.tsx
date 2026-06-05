@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { useState, useEffect } from "react";
 import {
   ArrowRight,
   Star,
@@ -13,6 +14,7 @@ import {
   testimonials,
   formatCurrency,
 } from "../data";
+import { comboApi } from "@/features/combos/api";
 
 const HERO_IMG =
   "https://images.unsplash.com/photo-1656911051207-f36a904da6d3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1400";
@@ -31,7 +33,32 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default function Home() {
-  const featuredCombos = combos.slice(0, 3);
+  const [apiCombos, setApiCombos] = useState<any[] | null>(null);
+
+  useEffect(() => {
+    comboApi.list().then(setApiCombos).catch(() => {});
+  }, []);
+
+  const mappedApiCombos = apiCombos
+    ? apiCombos.map(c => ({
+        id: c.slug,
+        name: c.name,
+        price: c.total_combo_vnd || 0,
+        originalPrice: c.total_original_vnd || undefined,
+        image: c.banner_url || '',
+        images: [c.banner_url || ''],
+        description: c.description,
+        items: [],
+        occasion: '',
+        rating: 4.5,
+        reviews: 0,
+        badge: apiCombos.length > 0 ? 'Tiết kiệm' : undefined,
+        inStock: true,
+        usageGuide: '',
+      }))
+    : null;
+  const displayCombos = mappedApiCombos || combos;
+  const featuredCombos = displayCombos.slice(0, 3);
 
   return (
     <div style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}>

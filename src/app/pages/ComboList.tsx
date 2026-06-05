@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { Star, SlidersHorizontal, X } from 'lucide-react';
 import { combos, OCCASIONS, formatCurrency } from '../data';
+import { comboApi } from '@/features/combos/api';
 import exampleImage from 'figma:asset/e5cf50079f7038348babb7662b17fe84a7e6152f.png';
 
 function StarRating({ rating }: { rating: number }) {
@@ -24,12 +25,36 @@ function StarRating({ rating }: { rating: number }) {
 export default function ComboList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showFilter, setShowFilter] = useState(false);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000000]);
   const [sortBy, setSortBy] = useState('popular');
+  const [apiCombos, setApiCombos] = useState<any[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    comboApi.list().then(setApiCombos).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  const displayCombos = apiCombos
+    ? apiCombos.map(c => ({
+        ...c,
+        id: c.slug,
+        price: 0,
+        originalPrice: undefined,
+        image: c.banner_url || '',
+        images: [c.banner_url || ''],
+        description: c.description,
+        items: [],
+        occasion: '',
+        rating: 4.5,
+        reviews: 0,
+        badge: undefined,
+        inStock: true,
+        usageGuide: '',
+      }))
+    : combos;
   const selectedOccasion = searchParams.get('occasion') || 'Tất cả';
 
-  const filtered = combos
+  const filtered = displayCombos
     .filter((c) => {
       const matchOccasion =
         selectedOccasion === 'Tất cả' || c.occasion === selectedOccasion;
@@ -157,8 +182,8 @@ export default function ComboList() {
                 <input
                   type="range"
                   min={0}
-                  max={2000000}
-                  step={50000}
+                  max={50000000}
+                  step={100000}
                   value={priceRange[1]}
                   onChange={(e) =>
                     setPriceRange([priceRange[0], Number(e.target.value)])

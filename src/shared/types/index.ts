@@ -21,7 +21,7 @@ export interface LoginReq {
 export interface RegisterReq {
   phone: string;
   password: string;
-  name: string;
+  full_name: string;
 }
 
 export interface RefreshReq {
@@ -43,6 +43,23 @@ export interface SessionItem {
 export interface AuthError {
   code: string;
   message: string;
+}
+
+// ── Products ───────────────────────────────────────────────────────────────
+
+/** GET /v1/me response */
+export interface UserProfile {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
+/** PUT /v1/me body (partial update) */
+export interface UserProfileUpdate {
+  name?: string;
+  email?: string;
+  address?: string;
 }
 
 // ── Products ───────────────────────────────────────────────────────────────
@@ -103,9 +120,51 @@ export interface SearchResponse {
   size: number;
 }
 
+// ── Blogs ───────────────────────────────────────────────────────────────────
+export interface BlogListItem {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  image_url?: string;
+  author: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  published_at?: string;
+}
+
+export interface BlogDetail extends BlogListItem {
+  content: string;
+}
+
+export interface BlogSearchResultItem {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  author: string;
+  created_at: string;
+  _score: number;
+}
+
+export interface BlogSearchResponse {
+  data: BlogSearchResultItem[];
+  total: number;
+  page: number;
+  size: number;
+}
+
+export interface BlogListResponse {
+  data: BlogListItem[];
+  total: number;
+  page: number;
+  size: number;
+}
+
 // ── Cart ───────────────────────────────────────────────────────────────────
 export interface CreateCartReq {
-  session_token?: string;
+  // empty body
 }
 
 export interface CartResponse {
@@ -129,12 +188,9 @@ export interface AddItemResponse {
 
 // ── Checkout ───────────────────────────────────────────────────────────────
 export interface ShippingAddress {
-  name: string;
-  phone: string;
   street: string;
   city: string;
-  province: string;
-  country: string;
+  district: string;
 }
 
 export interface BuyerInfo {

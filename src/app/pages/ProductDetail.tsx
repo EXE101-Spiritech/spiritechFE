@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router";
 import {
   Star,
@@ -9,6 +9,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { products, formatCurrency } from "../data";
+import { productApi } from "@/features/products/api";
 import { useCart } from "../context/CartContext";
 import { QuickCheckoutModal } from "../components/QuickCheckoutModal";
 import nhangImage from "figma:asset/b2c37b674ec7f7c6335108a122aa3526e2a6cfe3.png";
@@ -25,9 +26,32 @@ export default function ProductDetail() {
   const [activeImg, setActiveImg] = useState(0);
   const [addedMsg, setAddedMsg] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [apiProduct, setApiProduct] = useState<any | null>(undefined);
+  const [apiDone, setApiDone] = useState(false);
 
-  const product = products.find((p) => p.id === id);
-  if (!product) {
+  useEffect(() => {
+    if (id) {
+      productApi.get(id).then(setApiProduct).catch(() => setApiProduct(null)).finally(() => setApiDone(true));
+    }
+  }, [id]);
+
+  const mockMatch = products.find((p) => p.id === id);
+  const product = apiProduct
+    ? { ...apiProduct, price: apiProduct.base_price_vnd, image: apiProduct.images?.[0] || '', rating: 4.5, reviews: 0, badge: undefined, inStock: apiProduct.status === 'active', category: '' }
+    : apiProduct === undefined
+      ? mockMatch
+      : null;
+
+  // Show spinner while loading API for unknown products
+  if (!product && !mockMatch && !apiDone) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="inline-block w-6 h-6 border-2 border-[#cc323f] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!product && apiDone) {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center"
@@ -185,7 +209,7 @@ export default function ProductDetail() {
             </div>
             {product.images.length > 1 && (
               <div className="flex gap-2">
-                {product.images.map((img, i) => (
+                {product.images.map((img: any, i: number) => (
                   <button
                     key={i}
                     onClick={() => setActiveImg(i)}

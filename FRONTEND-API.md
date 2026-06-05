@@ -1100,6 +1100,11 @@ Authorization: Bearer <token> (optional)
 
 All admin endpoints require JWT with `admin` or `staff` role.
 
+Revenue counted from `payments` with `status = 'captured'` only.
+Cancelled, failed, and refunded payments are excluded.
+
+**Pending orders** = orders with status `paid`, `confirmed`, or `fulfilling`.
+
 ### 10.1 Dashboard 🔒 Admin
 
 ```http

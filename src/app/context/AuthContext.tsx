@@ -111,7 +111,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     } else {
-      setLoading(false);
+      // No access token — try using the refresh token if it exists
+      const refreshToken = getRefreshToken();
+      if (refreshToken) {
+        authApi
+          .refresh(refreshToken)
+          .then((data) => {
+            setTokens(data.access_token, data.refresh_token);
+          })
+          .catch(() => {
+            clearTokens();
+            clearUser();
+            setUser(null);
+          })
+          .finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -127,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(
     async (name: string, phone: string, password: string) => {
-      const data = await authApi.register({ name, phone, password });
+      const data = await authApi.register({ full_name: name, phone, password });
       setTokens(data.access_token, data.refresh_token);
 
       const newProfile: UserProfile = {

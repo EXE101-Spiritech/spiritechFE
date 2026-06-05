@@ -5,6 +5,7 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { products, combos, formatCurrency } from "../data";
 import { Logo } from "./Logo";
+import { AdminBadge } from "./AdminBadge";
 
 const popularProducts = [...products]
   .sort((a, b) => b.reviews - a.reviews)
@@ -36,7 +37,9 @@ export function Navbar() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [mobileSearchQuery, setMobileSearchQuery] = useState("");
   const { totalItems } = useCart();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
+  const isAdmin =
+    isLoggedIn && (user?.role === "admin" || user?.role === "staff");
   const location = useLocation();
   const navigate = useNavigate();
   const searchRef = useRef<HTMLDivElement>(null);
@@ -62,7 +65,7 @@ export function Navbar() {
     searchQuery.length > 1
       ? allItems
           .filter((i) =>
-            i.name.toLowerCase().includes(searchQuery.toLowerCase())
+            i.name.toLowerCase().includes(searchQuery.toLowerCase()),
           )
           .slice(0, 6)
       : [];
@@ -72,7 +75,8 @@ export function Navbar() {
   const showResults = searchFocused && searchQuery.length > 1;
 
   const handleSelect = (item: (typeof allItems)[0]) => {
-    const path = item.type === "product" ? `/products/${item.id}` : `/combo/${item.id}`;
+    const path =
+      item.type === "product" ? `/products/${item.id}` : `/combo/${item.id}`;
     navigate(path);
     setSearchQuery("");
     setSearchFocused(false);
@@ -87,7 +91,10 @@ export function Navbar() {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setSearchFocused(false);
       }
-      if (mobileSearchRef.current && !mobileSearchRef.current.contains(e.target as Node)) {
+      if (
+        mobileSearchRef.current &&
+        !mobileSearchRef.current.contains(e.target as Node)
+      ) {
         setMobileSearchOpen(false);
       }
     };
@@ -105,7 +112,7 @@ export function Navbar() {
     mobileSearchQuery.length > 1
       ? allItems
           .filter((i) =>
-            i.name.toLowerCase().includes(mobileSearchQuery.toLowerCase())
+            i.name.toLowerCase().includes(mobileSearchQuery.toLowerCase()),
           )
           .slice(0, 6)
       : [];
@@ -116,10 +123,12 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 shadow-md" style={{ backgroundColor: "#902131" }}>
+      <nav
+        className="sticky top-0 z-50 shadow-md"
+        style={{ backgroundColor: "#902131" }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-[68px] gap-6">
-
             {/* Logo */}
             <Link to="/" className="flex-shrink-0 flex items-center">
               <Logo height={48} />
@@ -135,7 +144,9 @@ export function Navbar() {
                   style={{
                     fontFamily: "Be Vietnam Pro, sans-serif",
                     fontWeight: isActive(link.to) ? 600 : 500,
-                    color: isActive(link.to) ? "#e6bb0c" : "rgba(255,255,255,0.88)",
+                    color: isActive(link.to)
+                      ? "#e6bb0c"
+                      : "rgba(255,255,255,0.88)",
                   }}
                 >
                   {link.label}
@@ -167,7 +178,12 @@ export function Navbar() {
                   transition: "width 0.25s ease, border-color 0.2s",
                 }}
               >
-                <Search className="w-4 h-4 flex-shrink-0" style={{ color: searchFocused ? "#e6bb0c" : "rgba(255,255,255,0.7)" }} />
+                <Search
+                  className="w-4 h-4 flex-shrink-0"
+                  style={{
+                    color: searchFocused ? "#e6bb0c" : "rgba(255,255,255,0.7)",
+                  }}
+                />
                 <input
                   ref={inputRef}
                   type="text"
@@ -187,7 +203,10 @@ export function Navbar() {
                 />
                 {searchQuery && (
                   <button
-                    onMouseDown={(e) => { e.preventDefault(); setSearchQuery(""); }}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setSearchQuery("");
+                    }}
                     className="flex-shrink-0 text-white/50 hover:text-white/90"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -205,10 +224,17 @@ export function Navbar() {
                   {showPopular && (
                     <>
                       <div className="flex items-center gap-2 px-4 pt-3 pb-2">
-                        <TrendingUp className="w-4 h-4" style={{ color: "#cc323f" }} />
+                        <TrendingUp
+                          className="w-4 h-4"
+                          style={{ color: "#cc323f" }}
+                        />
                         <span
                           className="text-xs uppercase tracking-wide"
-                          style={{ color: "#cc323f", fontWeight: 700, fontFamily: "Be Vietnam Pro, sans-serif" }}
+                          style={{
+                            color: "#cc323f",
+                            fontWeight: 700,
+                            fontFamily: "Be Vietnam Pro, sans-serif",
+                          }}
                         >
                           Sản phẩm bán chạy
                         </span>
@@ -217,13 +243,20 @@ export function Navbar() {
                         {popularProducts.map((item, idx) => (
                           <button
                             key={item.id}
-                            onMouseDown={() => handleSelect({ ...item, type: "product", badge: item.badge })}
+                            onMouseDown={() =>
+                              handleSelect({
+                                ...item,
+                                type: "product",
+                                badge: item.badge,
+                              })
+                            }
                             className="w-full flex items-center gap-3 px-4 py-2 hover:bg-[#fdf4f3] transition-colors text-left"
                           >
                             <span
                               className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs"
                               style={{
-                                backgroundColor: idx < 3 ? "#cc323f" : "#f1f5f9",
+                                backgroundColor:
+                                  idx < 3 ? "#cc323f" : "#f1f5f9",
                                 color: idx < 3 ? "white" : "#64748b",
                                 fontWeight: 700,
                                 fontFamily: "Be Vietnam Pro, sans-serif",
@@ -239,18 +272,29 @@ export function Navbar() {
                             <div className="flex-1 min-w-0">
                               <p
                                 className="text-sm text-gray-800 truncate"
-                                style={{ fontFamily: "Be Vietnam Pro, sans-serif", fontWeight: 500 }}
+                                style={{
+                                  fontFamily: "Be Vietnam Pro, sans-serif",
+                                  fontWeight: 500,
+                                }}
                               >
                                 {item.name}
                               </p>
-                              <p className="text-xs" style={{ color: "#cc323f" }}>
+                              <p
+                                className="text-xs"
+                                style={{ color: "#cc323f" }}
+                              >
                                 {formatCurrency(item.price)}
                               </p>
                             </div>
                             {item.badge && (
                               <span
                                 className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full"
-                                style={{ backgroundColor: "#fdf4f3", color: "#cc323f", fontWeight: 600, fontFamily: "Be Vietnam Pro, sans-serif" }}
+                                style={{
+                                  backgroundColor: "#fdf4f3",
+                                  color: "#cc323f",
+                                  fontWeight: 600,
+                                  fontFamily: "Be Vietnam Pro, sans-serif",
+                                }}
                               >
                                 {item.badge}
                               </span>
@@ -268,7 +312,11 @@ export function Navbar() {
                         <>
                           <p
                             className="px-4 pb-1 text-xs uppercase tracking-wide"
-                            style={{ color: "#94a3b8", fontFamily: "Be Vietnam Pro, sans-serif", fontWeight: 600 }}
+                            style={{
+                              color: "#94a3b8",
+                              fontFamily: "Be Vietnam Pro, sans-serif",
+                              fontWeight: 600,
+                            }}
                           >
                             Kết quả tìm kiếm
                           </p>
@@ -286,18 +334,36 @@ export function Navbar() {
                               <div className="flex-1 min-w-0">
                                 <p
                                   className="text-sm text-gray-800 truncate"
-                                  style={{ fontFamily: "Be Vietnam Pro, sans-serif", fontWeight: 500 }}
+                                  style={{
+                                    fontFamily: "Be Vietnam Pro, sans-serif",
+                                    fontWeight: 500,
+                                  }}
                                 >
                                   {item.name}
                                 </p>
                                 <div className="flex items-center gap-2">
                                   <span
                                     className="text-xs px-1.5 py-0.5 rounded"
-                                    style={{ backgroundColor: item.type === "combo" ? "#fef9e7" : "#fdf4f3", color: item.type === "combo" ? "#92620a" : "#cc323f", fontWeight: 600 }}
+                                    style={{
+                                      backgroundColor:
+                                        item.type === "combo"
+                                          ? "#fef9e7"
+                                          : "#fdf4f3",
+                                      color:
+                                        item.type === "combo"
+                                          ? "#92620a"
+                                          : "#cc323f",
+                                      fontWeight: 600,
+                                    }}
                                   >
-                                    {item.type === "combo" ? "Combo" : "Sản phẩm"}
+                                    {item.type === "combo"
+                                      ? "Combo"
+                                      : "Sản phẩm"}
                                   </span>
-                                  <span className="text-xs" style={{ color: "#cc323f" }}>
+                                  <span
+                                    className="text-xs"
+                                    style={{ color: "#cc323f" }}
+                                  >
                                     {formatCurrency(item.price)}
                                   </span>
                                 </div>
@@ -307,7 +373,10 @@ export function Navbar() {
                         </>
                       ) : (
                         <div className="px-4 py-5 text-center">
-                          <p className="text-sm text-gray-400" style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}>
+                          <p
+                            className="text-sm text-gray-400"
+                            style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}
+                          >
                             Không tìm thấy kết quả cho "{searchQuery}"
                           </p>
                         </div>
@@ -328,9 +397,11 @@ export function Navbar() {
                   setTimeout(() => mobileInputRef.current?.focus(), 80);
                 }}
               >
-                {mobileSearchOpen
-                  ? <X className="w-5 h-5" />
-                  : <Search className="w-5 h-5" />}
+                {mobileSearchOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Search className="w-5 h-5" />
+                )}
               </button>
 
               <Link
@@ -341,7 +412,12 @@ export function Navbar() {
                 {totalItems > 0 && (
                   <span
                     className="absolute top-0.5 right-0.5 text-xs w-4 h-4 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: "#e6bb0c", color: "#902131", fontWeight: 700, fontSize: "10px" }}
+                    style={{
+                      backgroundColor: "#e6bb0c",
+                      color: "#902131",
+                      fontWeight: 700,
+                      fontSize: "10px",
+                    }}
                   >
                     {totalItems > 9 ? "9+" : totalItems}
                   </span>
@@ -355,11 +431,17 @@ export function Navbar() {
                 <User className="w-5 h-5" />
               </Link>
 
+              {isAdmin && <AdminBadge />}
+
               <button
                 className="lg:hidden text-white p-2"
                 onClick={() => setMobileOpen(!mobileOpen)}
               >
-                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {mobileOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>
@@ -380,7 +462,10 @@ export function Navbar() {
                   border: "1.5px solid rgba(230,187,12,0.6)",
                 }}
               >
-                <Search className="w-4 h-4 flex-shrink-0" style={{ color: "#e6bb0c" }} />
+                <Search
+                  className="w-4 h-4 flex-shrink-0"
+                  style={{ color: "#e6bb0c" }}
+                />
                 <input
                   ref={mobileInputRef}
                   type="text"
@@ -398,8 +483,14 @@ export function Navbar() {
                 />
                 {mobileSearchQuery && (
                   <button
-                    onTouchStart={(e) => { e.preventDefault(); setMobileSearchQuery(""); }}
-                    onMouseDown={(e) => { e.preventDefault(); setMobileSearchQuery(""); }}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      setMobileSearchQuery("");
+                    }}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setMobileSearchQuery("");
+                    }}
                     className="flex-shrink-0 text-white/50 hover:text-white/90 p-1"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -418,10 +509,17 @@ export function Navbar() {
                 {showMobilePopular && (
                   <>
                     <div className="flex items-center gap-2 px-4 pt-3 pb-2">
-                      <TrendingUp className="w-4 h-4" style={{ color: "#cc323f" }} />
+                      <TrendingUp
+                        className="w-4 h-4"
+                        style={{ color: "#cc323f" }}
+                      />
                       <span
                         className="text-xs uppercase tracking-wide"
-                        style={{ color: "#cc323f", fontWeight: 700, fontFamily: "Be Vietnam Pro, sans-serif" }}
+                        style={{
+                          color: "#cc323f",
+                          fontWeight: 700,
+                          fontFamily: "Be Vietnam Pro, sans-serif",
+                        }}
                       >
                         Sản phẩm bán chạy
                       </span>
@@ -430,8 +528,20 @@ export function Navbar() {
                       {popularProducts.map((item, idx) => (
                         <button
                           key={item.id}
-                          onTouchStart={() => handleSelect({ ...item, type: "product", badge: item.badge })}
-                          onMouseDown={() => handleSelect({ ...item, type: "product", badge: item.badge })}
+                          onTouchStart={() =>
+                            handleSelect({
+                              ...item,
+                              type: "product",
+                              badge: item.badge,
+                            })
+                          }
+                          onMouseDown={() =>
+                            handleSelect({
+                              ...item,
+                              type: "product",
+                              badge: item.badge,
+                            })
+                          }
                           className="w-full flex items-center gap-3 px-4 py-2.5 active:bg-[#fdf4f3] hover:bg-[#fdf4f3] transition-colors text-left"
                         >
                           <span
@@ -453,7 +563,10 @@ export function Navbar() {
                           <div className="flex-1 min-w-0">
                             <p
                               className="text-sm text-gray-800 truncate"
-                              style={{ fontFamily: "Be Vietnam Pro, sans-serif", fontWeight: 500 }}
+                              style={{
+                                fontFamily: "Be Vietnam Pro, sans-serif",
+                                fontWeight: 500,
+                              }}
                             >
                               {item.name}
                             </p>
@@ -464,7 +577,12 @@ export function Navbar() {
                           {item.badge && (
                             <span
                               className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full"
-                              style={{ backgroundColor: "#fdf4f3", color: "#cc323f", fontWeight: 600, fontFamily: "Be Vietnam Pro, sans-serif" }}
+                              style={{
+                                backgroundColor: "#fdf4f3",
+                                color: "#cc323f",
+                                fontWeight: 600,
+                                fontFamily: "Be Vietnam Pro, sans-serif",
+                              }}
                             >
                               {item.badge}
                             </span>
@@ -482,7 +600,11 @@ export function Navbar() {
                       <>
                         <p
                           className="px-4 pb-1 text-xs uppercase tracking-wide"
-                          style={{ color: "#94a3b8", fontFamily: "Be Vietnam Pro, sans-serif", fontWeight: 600 }}
+                          style={{
+                            color: "#94a3b8",
+                            fontFamily: "Be Vietnam Pro, sans-serif",
+                            fontWeight: 600,
+                          }}
                         >
                           Kết quả tìm kiếm
                         </p>
@@ -501,18 +623,34 @@ export function Navbar() {
                             <div className="flex-1 min-w-0">
                               <p
                                 className="text-sm text-gray-800 truncate"
-                                style={{ fontFamily: "Be Vietnam Pro, sans-serif", fontWeight: 500 }}
+                                style={{
+                                  fontFamily: "Be Vietnam Pro, sans-serif",
+                                  fontWeight: 500,
+                                }}
                               >
                                 {item.name}
                               </p>
                               <div className="flex items-center gap-2">
                                 <span
                                   className="text-xs px-1.5 py-0.5 rounded"
-                                  style={{ backgroundColor: item.type === "combo" ? "#fef9e7" : "#fdf4f3", color: item.type === "combo" ? "#92620a" : "#cc323f", fontWeight: 600 }}
+                                  style={{
+                                    backgroundColor:
+                                      item.type === "combo"
+                                        ? "#fef9e7"
+                                        : "#fdf4f3",
+                                    color:
+                                      item.type === "combo"
+                                        ? "#92620a"
+                                        : "#cc323f",
+                                    fontWeight: 600,
+                                  }}
                                 >
                                   {item.type === "combo" ? "Combo" : "Sản phẩm"}
                                 </span>
-                                <span className="text-xs" style={{ color: "#cc323f" }}>
+                                <span
+                                  className="text-xs"
+                                  style={{ color: "#cc323f" }}
+                                >
                                   {formatCurrency(item.price)}
                                 </span>
                               </div>
@@ -522,7 +660,10 @@ export function Navbar() {
                       </>
                     ) : (
                       <div className="px-4 py-5 text-center">
-                        <p className="text-sm text-gray-400" style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}>
+                        <p
+                          className="text-sm text-gray-400"
+                          style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}
+                        >
                           Không tìm thấy kết quả cho "{mobileSearchQuery}"
                         </p>
                       </div>
@@ -539,9 +680,9 @@ export function Navbar() {
         <div
           className="lg:hidden fixed inset-0 z-40 transition-opacity duration-300"
           style={{
-            backgroundColor: 'rgba(15,23,42,0.5)',
+            backgroundColor: "rgba(15,23,42,0.5)",
             opacity: mobileOpen ? 1 : 0,
-            pointerEvents: mobileOpen ? 'auto' : 'none',
+            pointerEvents: mobileOpen ? "auto" : "none",
           }}
           onClick={() => setMobileOpen(false)}
         />
@@ -550,21 +691,30 @@ export function Navbar() {
         <div
           className="lg:hidden fixed top-0 right-0 z-50 h-full flex flex-col"
           style={{
-            width: '72vw',
-            maxWidth: '300px',
-            background: 'linear-gradient(160deg, #3a0e16 0%, #902131 60%, #cc323f 100%)',
-            boxShadow: '-8px 0 32px rgba(0,0,0,0.35)',
-            transform: mobileOpen ? 'translateX(0)' : 'translateX(100%)',
-            transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
-            fontFamily: 'Be Vietnam Pro, sans-serif',
+            width: "72vw",
+            maxWidth: "300px",
+            background:
+              "linear-gradient(160deg, #3a0e16 0%, #902131 60%, #cc323f 100%)",
+            boxShadow: "-8px 0 32px rgba(0,0,0,0.35)",
+            transform: mobileOpen ? "translateX(0)" : "translateX(100%)",
+            transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)",
+            fontFamily: "Be Vietnam Pro, sans-serif",
           }}
         >
           {/* Drawer header */}
           <div
             className="flex items-center justify-between px-5 py-4 flex-shrink-0"
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.12)' }}
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.12)" }}
           >
-            <span style={{ fontFamily: 'Lora, serif', fontWeight: 700, fontSize: '1rem', color: '#e6bb0c', letterSpacing: '0.01em' }}>
+            <span
+              style={{
+                fontFamily: "Lora, serif",
+                fontWeight: 700,
+                fontSize: "1rem",
+                color: "#e6bb0c",
+                letterSpacing: "0.01em",
+              }}
+            >
               Góc An Nhiên
             </span>
             <button
@@ -585,10 +735,16 @@ export function Navbar() {
                 className="flex items-center gap-3 px-5 py-3.5 transition-colors relative"
                 style={{
                   fontWeight: isActive(link.to) ? 700 : 500,
-                  fontSize: '0.95rem',
-                  color: isActive(link.to) ? '#e6bb0c' : 'rgba(255,255,255,0.88)',
-                  backgroundColor: isActive(link.to) ? 'rgba(0,0,0,0.2)' : undefined,
-                  borderLeft: isActive(link.to) ? '3px solid #e6bb0c' : '3px solid transparent',
+                  fontSize: "0.95rem",
+                  color: isActive(link.to)
+                    ? "#e6bb0c"
+                    : "rgba(255,255,255,0.88)",
+                  backgroundColor: isActive(link.to)
+                    ? "rgba(0,0,0,0.2)"
+                    : undefined,
+                  borderLeft: isActive(link.to)
+                    ? "3px solid #e6bb0c"
+                    : "3px solid transparent",
                 }}
               >
                 {link.label}
@@ -600,14 +756,19 @@ export function Navbar() {
               onClick={() => setMobileOpen(false)}
               className="flex items-center gap-3 px-5 py-3.5 transition-colors relative"
               style={{
-                fontWeight: isActive('/calendar') ? 700 : 500,
-                fontSize: '0.95rem',
-                color: isActive('/calendar') ? '#e6bb0c' : 'rgba(255,255,255,0.88)',
-                backgroundColor: isActive('/calendar') ? 'rgba(0,0,0,0.2)' : undefined,
-                borderLeft: isActive('/calendar') ? '3px solid #e6bb0c' : '3px solid transparent',
+                fontWeight: isActive("/calendar") ? 700 : 500,
+                fontSize: "0.95rem",
+                color: isActive("/calendar")
+                  ? "#e6bb0c"
+                  : "rgba(255,255,255,0.88)",
+                backgroundColor: isActive("/calendar")
+                  ? "rgba(0,0,0,0.2)"
+                  : undefined,
+                borderLeft: isActive("/calendar")
+                  ? "3px solid #e6bb0c"
+                  : "3px solid transparent",
               }}
             >
-              
               Xem lịch cúng
             </Link>
           </nav>
@@ -615,33 +776,51 @@ export function Navbar() {
           {/* Bottom shortcuts */}
           <div
             className="flex-shrink-0 px-5 py-4 flex items-center gap-3"
-            style={{ borderTop: '1px solid rgba(255,255,255,0.12)' }}
+            style={{ borderTop: "1px solid rgba(255,255,255,0.12)" }}
           >
             <Link
               to="/cart"
               onClick={() => setMobileOpen(false)}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-colors"
-              style={{ backgroundColor: 'rgba(255,255,255,0.12)', color: 'white', fontSize: '0.85rem', fontWeight: 600 }}
+              style={{
+                backgroundColor: "rgba(255,255,255,0.12)",
+                color: "white",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+              }}
             >
               <ShoppingCart className="w-4 h-4" />
               Giỏ hàng
               {totalItems > 0 && (
                 <span
                   className="w-5 h-5 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: '#e6bb0c', color: '#902131', fontWeight: 700, fontSize: '10px' }}
+                  style={{
+                    backgroundColor: "#e6bb0c",
+                    color: "#902131",
+                    fontWeight: 700,
+                    fontSize: "10px",
+                  }}
                 >
-                  {totalItems > 9 ? '9+' : totalItems}
+                  {totalItems > 9 ? "9+" : totalItems}
                 </span>
               )}
             </Link>
+            {isAdmin && (
+              <AdminBadge mobile onNavigate={() => setMobileOpen(false)} />
+            )}
             <Link
-              to={isLoggedIn ? '/account' : '/login'}
+              to={isLoggedIn ? "/account" : "/login"}
               onClick={() => setMobileOpen(false)}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-colors"
-              style={{ backgroundColor: '#e6bb0c', color: '#3a0e16', fontSize: '0.85rem', fontWeight: 700 }}
+              style={{
+                backgroundColor: "#e6bb0c",
+                color: "#3a0e16",
+                fontSize: "0.85rem",
+                fontWeight: 700,
+              }}
             >
               <User className="w-4 h-4" />
-              {isLoggedIn ? 'Tài khoản' : 'Đăng nhập'}
+              {isLoggedIn ? "Tài khoản" : "Đăng nhập"}
             </Link>
           </div>
         </div>

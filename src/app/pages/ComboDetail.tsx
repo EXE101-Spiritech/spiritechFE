@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router';
 import { Star, ShoppingCart, Zap, Check, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 import { combos, formatCurrency } from '../data';
+import { comboApi } from '@/features/combos/api';
 import { useCart } from '../context/CartContext';
 import { QuickCheckoutModal } from '../components/QuickCheckoutModal';
 import comboCoverImage from 'figma:asset/e5cf50079f7038348babb7662b17fe84a7e6152f.png';
@@ -14,8 +15,32 @@ export default function ComboDetail() {
   const [activeImg, setActiveImg] = useState(0);
   const [addedMsg, setAddedMsg] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [apiCombo, setApiCombo] = useState<any | null>(null);
 
-  const combo = combos.find(c => c.id === id);
+  useEffect(() => {
+    if (id) {
+      comboApi.get(id).then(setApiCombo).catch(() => {});
+    }
+  }, [id]);
+
+  // Map API combo to UI expected shape
+  const combo = apiCombo
+    ? {
+        ...apiCombo,
+        id: apiCombo.slug,
+        price: apiCombo.total_combo_vnd,
+        originalPrice: apiCombo.total_original_vnd,
+        image: apiCombo.banner_url || '',
+        images: [apiCombo.banner_url || ''],
+        items: apiCombo.products?.map((p: any) => p.name) || [],
+        occasion: '',
+        rating: 4.5,
+        reviews: 0,
+        badge: 'Tiết kiệm',
+        inStock: true,
+        usageGuide: '',
+      }
+    : combos.find(c => c.id === id);
   if (!combo) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center" style={{ fontFamily: 'Be Vietnam Pro, sans-serif' }}>
@@ -92,7 +117,7 @@ export default function ComboDetail() {
             </div>
             {combo.images.length > 1 && (
               <div className="flex gap-2">
-                {combo.images.map((img, i) => (
+                {combo.images.map((img: any, i: number) => (
                   <button
                     key={i}
                     onClick={() => setActiveImg(i)}
@@ -154,8 +179,8 @@ export default function ComboDetail() {
               </div>
               <ul className="grid grid-cols-1 gap-1.5">
                 {combo.items
-                  .filter(item => !['Muối gạo', 'Trái cây', 'Hoa cúng tươi', 'Rượu cúng'].some(exclude => item.toLowerCase().includes(exclude.toLowerCase())))
-                  .map((item, i) => (
+                  .filter((item: any) => !['Muối gạo', 'Trái cây', 'Hoa cúng tươi', 'Rượu cúng'].some(exclude => item.toLowerCase().includes(exclude.toLowerCase())))
+                  .map((item: any, i: number) => (
                   <li key={i} className="flex items-center gap-2 text-sm text-gray-600">
                     <Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
                     {item}
