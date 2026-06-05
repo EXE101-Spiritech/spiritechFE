@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router';
 import { ChevronRight, Package, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { mockOrders, formatCurrency, getStatusLabel, getStatusColor, Order } from '../data';
+import { orderApi } from "@/features/orders/api";
 
 function loadUserOrders(): Order[] {
   try {

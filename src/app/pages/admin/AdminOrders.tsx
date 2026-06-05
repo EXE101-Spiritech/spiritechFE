@@ -3,6 +3,7 @@ import { Search, X, ChevronDown } from "lucide-react";
 import { adminOrders } from "../../data/adminData";
 import type { AdminOrder } from "../../data/adminData";
 import { formatCurrency } from "../../data/index";
+import { adminApi } from "@/features/admin/api";
 
 const PAYMENT_LABELS: Record<
   string,
@@ -59,6 +60,8 @@ export default function AdminOrders() {
     id: string,
     status: "pending" | "paid" | "completed",
   ) => {
+    // Call admin API to advance status
+    try { adminApi.advanceOrderStatus(id).catch(() => {}); } catch {}
     setOrders((os) =>
       os.map((o) => (o.id === id ? { ...o, orderStatus: status } : o)),
     );

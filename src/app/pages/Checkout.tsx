@@ -22,6 +22,8 @@ import {
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../data";
+import { checkoutApi } from "@/features/checkout/api";
+import { orderApi } from "@/features/orders/api";
 
 // ─── VietQR Component ─────────────────────────────────────────────────────────
 function VietQR({ amount, info }: { amount: number; info: string }) {

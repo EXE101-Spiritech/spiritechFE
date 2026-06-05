@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import {
   LayoutDashboard,
+  Tag,
   Package,
   Boxes,
   ShoppingCart,
   Calendar,
+  FolderTree,
   FileText,
   BarChart2,
   Users,
@@ -17,44 +19,44 @@ import {
 import { getAccessToken, getUserRole } from "@/shared/api/axiosClient";
 import AdminDashboard from "./AdminDashboard";
 import AdminProducts from "./AdminProducts";
+import AdminCategories from "./AdminCategories";
+import AdminCombo from "./AdminCombo";
 import AdminInventory from "./AdminInventory";
-import AdminOrders from "./AdminOrders";
-import AdminEvents from "./AdminEvents";
 import AdminCMS from "./AdminCMS";
+import AdminCoupons from "./AdminCoupons";
 import AdminAnalytics from "./AdminAnalytics";
-import AdminUsers from "./AdminUsers";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Section =
   | "dashboard"
   | "products"
+  | "categories"
+  | "combos"
   | "inventory"
-  | "orders"
-  | "events"
   | "cms"
-  | "analytics"
-  | "users";
+  | "coupons"
+  | "analytics";
 
 const NAV_ITEMS: { key: Section; icon: React.ElementType; label: string }[] = [
   { key: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { key: "products", icon: Package, label: "Sản phẩm" },
+  { key: "categories", icon: FolderTree, label: "Danh mục" },
+  { key: "combos", icon: Package, label: "Combo" },
   { key: "inventory", icon: Boxes, label: "Kho hàng" },
-  { key: "orders", icon: ShoppingCart, label: "Đơn hàng" },
-  { key: "events", icon: Calendar, label: "Sự kiện" },
   { key: "cms", icon: FileText, label: "Nội dung (CMS)" },
+  { key: "coupons", icon: Tag, label: "Mã giảm giá" },
   { key: "analytics", icon: BarChart2, label: "Thống kê" },
-  { key: "users", icon: Users, label: "Người dùng" },
 ];
 
 const SECTION_TITLES: Record<Section, string> = {
   dashboard: "Dashboard",
   products: "Quản lý Sản phẩm",
+  categories: "Danh mục sản phẩm",
+  combos: "Quản lý Combo",
   inventory: "Quản lý Kho hàng",
-  orders: "Quản lý Đơn hàng",
-  events: "Quản lý Sự kiện",
   cms: "Quản lý Nội dung",
+  coupons: "Mã giảm giá",
   analytics: "Thống kê & Báo cáo",
-  users: "Quản lý Người dùng",
 };
 
 // ─── Admin Layout ─────────────────────────────────────────────────────────────
@@ -264,12 +266,12 @@ function AdminLayout({
         <main className="flex-1 overflow-auto p-4 md:p-6">
           {activeSection === "dashboard" && <AdminDashboard />}
           {activeSection === "products" && <AdminProducts />}
+          {activeSection === "categories" && <AdminCategories />}
+          {activeSection === "combos" && <AdminCombo />}
           {activeSection === "inventory" && <AdminInventory />}
-          {activeSection === "orders" && <AdminOrders />}
-          {activeSection === "events" && <AdminEvents />}
           {activeSection === "cms" && <AdminCMS />}
+          {activeSection === "coupons" && <AdminCoupons />}
           {activeSection === "analytics" && <AdminAnalytics />}
-          {activeSection === "users" && <AdminUsers />}
         </main>
       </div>
     </div>

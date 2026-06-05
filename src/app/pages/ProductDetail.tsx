@@ -97,7 +97,7 @@ export default function ProductDetail() {
       style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}
       className="min-h-screen bg-[#f8fafc]"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Breadcrumb */}
         <nav className="text-sm text-gray-500 mb-6 flex items-center gap-3">
           <button

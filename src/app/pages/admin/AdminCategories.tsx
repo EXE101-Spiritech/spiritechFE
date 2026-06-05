@@ -1,54 +1,19 @@
 import { useState, useEffect } from "react";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  X,
-  Search,
-  Eye,
-  EyeOff,
-  CalendarDays,
-} from "lucide-react";
-import { adminApi } from "@/features/admin/api";
-
-interface BlogPost {
-  id: string;
-  slug: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  image_url: string;
-  author: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  published_at?: string;
-}
+import { Plus, Pencil, Trash2, X, Search, FolderTree } from "lucide-react";
+import { adminApi, Category } from "@/features/admin/api";
 
 const EMPTY_FORM = {
-  slug: "",
-  title: "",
-  content: "",
-  excerpt: "",
-  image_url: "",
-  author: "Admin",
-  status: "draft" as const,
+  Name: "",
+  Slug: "",
+  NameEN: "",
+  Description: "",
+  SortOrder: 1,
 };
 
-const STATUS_STYLES: Record<
-  string,
-  { label: string; color: string; bg: string }
-> = {
-  draft: { label: "Nháp", color: "#6b7280", bg: "#f3f4f6" },
-  published: { label: "Đã xuất bản", color: "#16a34a", bg: "#f0fdf4" },
-  archived: { label: "Lưu trữ", color: "#d97706", bg: "#fffbeb" },
-};
-
-export default function AdminCMS() {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
+export default function AdminCategories() {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -57,21 +22,19 @@ export default function AdminCMS() {
   const load = () => {
     setLoading(true);
     adminApi
-      .listBlogs()
-      .then((r: any) => setPosts(Array.isArray(r) ? r : (r.data || [])))
+      .listCategories()
+      .then((r) => setCategories(Array.isArray(r) ? r : []))
       .catch(() => {})
       .finally(() => setLoading(false));
   };
 
   useEffect(load, []);
 
-  const filtered = posts.filter((p) => {
-    const matchSearch =
-      p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.slug.includes(search.toLowerCase());
-    const matchStatus = filterStatus === "all" || p.status === filterStatus;
-    return matchSearch && matchStatus;
-  });
+  const filtered = categories.filter(
+    (c) =>
+      c.Name.toLowerCase().includes(search.toLowerCase()) ||
+      c.Slug.toLowerCase().includes(search.toLowerCase()),
+  );
 
   const openAdd = () => {
     setEditingId(null);
@@ -79,36 +42,32 @@ export default function AdminCMS() {
     setModalOpen(true);
   };
 
-  const openEdit = (p: BlogPost) => {
-    setEditingId(p.id);
+  const openEdit = (c: Category) => {
+    setEditingId(c.ID);
     setForm({
-      slug: p.slug,
-      title: p.title,
-      content: p.content || "",
-      excerpt: p.excerpt || "",
-      image_url: p.image_url || "",
-      author: p.author || "Admin",
-      status: p.status as any,
+      Name: c.Name,
+      Slug: c.Slug,
+      NameEN: c.NameEN || "",
+      Description: c.Description || "",
+      SortOrder: c.SortOrder || 1,
     });
     setModalOpen(true);
   };
 
   const handleSave = async () => {
-    if (!form.title.trim()) return;
+    if (!form.Name.trim()) return;
     const slug =
-      form.slug ||
-      form.title
-        .toLowerCase()
+      form.Slug ||
+      form.Name.toLowerCase()
         .replace(/đ/g, "d")
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
-    const data = { ...form, slug };
-
+    const data = { name: form.Name, slug };
     try {
       if (editingId) {
-        await adminApi.updateBlog(editingId, data);
+        await adminApi.updateCategory(editingId, data);
       } else {
-        await adminApi.createBlog(data);
+        await adminApi.createCategory(data);
       }
       load();
     } catch {
@@ -119,16 +78,13 @@ export default function AdminCMS() {
 
   const handleDelete = async (id: string) => {
     try {
-      await adminApi.deleteBlog(id);
+      await adminApi.deleteCategory(id);
     } catch {
       /* ignore */
     }
-    setPosts((p) => p.filter((x) => x.id !== id));
+    setCategories((p) => p.filter((c) => c.ID !== id));
     setDeleteId(null);
   };
-
-  const activeCount = posts.filter((p) => p.status === "published").length;
-  const draftCount = posts.filter((p) => p.status === "draft").length;
 
   if (loading)
     return (
@@ -145,10 +101,10 @@ export default function AdminCMS() {
             className="text-xl font-semibold text-gray-900"
             style={{ fontFamily: "Lora, serif" }}
           >
-            Bài viết
+            Danh mục
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            {posts.length} bài viết
+            {categories.length} danh mục
           </p>
         </div>
         <button
@@ -156,23 +112,8 @@ export default function AdminCMS() {
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-medium transition-all hover:opacity-90"
           style={{ background: "linear-gradient(135deg, #cc323f, #902131)" }}
         >
-          <Plus size={16} /> Viết bài mới
+          <Plus size={16} /> Thêm danh mục
         </button>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <p className="text-xs text-gray-500 mb-1">Tổng số</p>
-          <p className="text-2xl font-semibold text-gray-900">{posts.length}</p>
-        </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <p className="text-xs text-gray-500 mb-1">Đã xuất bản</p>
-          <p className="text-2xl font-semibold text-green-600">{activeCount}</p>
-        </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <p className="text-xs text-gray-500 mb-1">Bản nháp</p>
-          <p className="text-2xl font-semibold text-gray-500">{draftCount}</p>
-        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
@@ -184,29 +125,9 @@ export default function AdminCMS() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm bài viết..."
+            placeholder="Tìm danh mục..."
             className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
           />
-        </div>
-        <div className="flex rounded-xl border border-gray-200 overflow-hidden bg-white">
-          {(["all", "published", "draft"] as const).map((s, i) => (
-            <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
-              className={`px-4 py-2.5 text-sm transition-colors ${i > 0 ? "border-l border-gray-200" : ""}`}
-              style={
-                filterStatus === s
-                  ? { background: "#cc323f", color: "#fff" }
-                  : { color: "#6b7280" }
-              }
-            >
-              {s === "all"
-                ? "Tất cả"
-                : s === "published"
-                  ? "Đã xuất bản"
-                  : "Nháp"}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -219,16 +140,16 @@ export default function AdminCMS() {
                 className="border-b border-gray-100"
               >
                 <th className="text-left px-5 py-3.5 text-gray-500 font-medium">
-                  Bài viết
+                  Danh mục
                 </th>
                 <th className="text-left px-5 py-3.5 text-gray-500 font-medium hidden sm:table-cell">
                   Slug
                 </th>
-                <th className="text-center px-5 py-3.5 text-gray-500 font-medium hidden md:table-cell">
-                  Trạng thái
+                <th className="text-left px-5 py-3.5 text-gray-500 font-medium hidden md:table-cell">
+                  Tên EN
                 </th>
                 <th className="text-center px-5 py-3.5 text-gray-500 font-medium hidden lg:table-cell">
-                  Ngày tạo
+                  Thứ tự
                 </th>
                 <th className="text-center px-5 py-3.5 text-gray-500 font-medium">
                   Thao tác
@@ -236,76 +157,54 @@ export default function AdminCMS() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filtered.map((p) => (
+              {filtered.map((c) => (
                 <tr
-                  key={p.id}
+                  key={c.ID}
                   className="hover:bg-gray-50/50 transition-colors"
                 >
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
-                      {p.image_url ? (
-                        <img
-                          src={p.image_url}
-                          alt=""
-                          className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-gray-100"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <CalendarDays size={16} className="text-gray-400" />
-                        </div>
-                      )}
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: "rgba(204,50,63,0.08)" }}
+                      >
+                        <FolderTree size={16} style={{ color: "#cc323f" }} />
+                      </div>
                       <div>
                         <p className="font-medium text-gray-800 text-sm">
-                          {p.title}
+                          {c.Name}
                         </p>
-                        <p className="text-gray-400 text-xs mt-0.5">
-                          {p.excerpt?.slice(0, 60)}
-                        </p>
+                        {c.Description && (
+                          <p className="text-gray-400 text-xs mt-0.5">
+                            {c.Description.slice(0, 60)}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </td>
                   <td className="px-5 py-3.5 hidden sm:table-cell">
                     <span className="text-gray-400 font-mono text-xs">
-                      {p.slug}
+                      {c.Slug}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-center hidden md:table-cell">
-                    <span
-                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                      style={{
-                        color: STATUS_STYLES[p.status]?.color,
-                        background: STATUS_STYLES[p.status]?.bg,
-                      }}
-                    >
-                      {p.status === "published" ? (
-                        <>
-                          <Eye size={11} className="mr-1" />{" "}
-                          {STATUS_STYLES[p.status]?.label}
-                        </>
-                      ) : p.status === "draft" ? (
-                        <>
-                          <EyeOff size={11} className="mr-1" /> Nháp
-                        </>
-                      ) : (
-                        STATUS_STYLES[p.status]?.label
-                      )}
+                  <td className="px-5 py-3.5 hidden md:table-cell">
+                    <span className="text-gray-500 text-sm">
+                      {c.NameEN || "—"}
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-center hidden lg:table-cell">
-                    <span className="text-xs text-gray-500">
-                      {p.created_at?.slice(0, 10)}
-                    </span>
+                    <span className="text-gray-600">{c.SortOrder || 1}</span>
                   </td>
                   <td className="px-5 py-3.5 text-center">
                     <div className="flex items-center justify-center gap-1.5">
                       <button
-                        onClick={() => openEdit(p)}
+                        onClick={() => openEdit(c)}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50"
                       >
                         <Pencil size={15} />
                       </button>
                       <button
-                        onClick={() => setDeleteId(p.id)}
+                        onClick={() => setDeleteId(c.ID)}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50"
                       >
                         <Trash2 size={15} />
@@ -318,7 +217,7 @@ export default function AdminCMS() {
           </table>
           {filtered.length === 0 && (
             <div className="text-center py-12 text-gray-400">
-              Chưa có bài viết nào.
+              Chưa có danh mục nào.
             </div>
           )}
         </div>
@@ -326,13 +225,13 @@ export default function AdminCMS() {
 
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h3
                 className="font-semibold text-gray-900"
                 style={{ fontFamily: "Lora, serif" }}
               >
-                {editingId ? "Chỉnh sửa bài viết" : "Viết bài mới"}
+                {editingId ? "Chỉnh sửa danh mục" : "Thêm danh mục"}
               </h3>
               <button
                 onClick={() => setModalOpen(false)}
@@ -344,99 +243,67 @@ export default function AdminCMS() {
             <div className="px-6 py-4 space-y-4">
               <div>
                 <label className="block text-sm text-gray-700 mb-1">
-                  Tiêu đề *
+                  Tên danh mục *
                 </label>
                 <input
-                  value={form.title}
+                  value={form.Name}
                   onChange={(e) =>
-                    setForm((f) => ({ ...f, title: e.target.value }))
+                    setForm((f) => ({ ...f, Name: e.target.value }))
                   }
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
-                  placeholder="Nhập tiêu đề..."
+                  placeholder="VD: Bàn Thờ & Tủ Thờ"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Slug</label>
+                <input
+                  value={form.Slug}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, Slug: e.target.value }))
+                  }
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
+                  placeholder="Tự động từ tên"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm text-gray-700 mb-1">
-                    Slug
+                    Tên tiếng Anh
                   </label>
                   <input
-                    value={form.slug}
+                    value={form.NameEN}
                     onChange={(e) =>
-                      setForm((f) => ({ ...f, slug: e.target.value }))
+                      setForm((f) => ({ ...f, NameEN: e.target.value }))
                     }
                     className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
-                    placeholder="Tự động từ tiêu đề"
                   />
                 </div>
                 <div>
                   <label className="block text-sm text-gray-700 mb-1">
-                    Trạng thái
+                    Thứ tự
                   </label>
-                  <select
-                    value={form.status}
+                  <input
+                    type="number"
+                    value={form.SortOrder}
                     onChange={(e) =>
-                      setForm((f) => ({ ...f, status: e.target.value as any }))
+                      setForm((f) => ({ ...f, SortOrder: +e.target.value }))
                     }
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none bg-white"
-                  >
-                    <option value="draft">Nháp</option>
-                    <option value="published">Xuất bản</option>
-                    <option value="archived">Lưu trữ</option>
-                  </select>
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
+                  />
                 </div>
               </div>
               <div>
                 <label className="block text-sm text-gray-700 mb-1">
-                  Tóm tắt
+                  Mô tả
                 </label>
                 <textarea
-                  value={form.excerpt}
+                  value={form.Description}
                   onChange={(e) =>
-                    setForm((f) => ({ ...f, excerpt: e.target.value }))
+                    setForm((f) => ({ ...f, Description: e.target.value }))
                   }
                   rows={2}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 resize-none"
                   placeholder="Mô tả ngắn..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-700 mb-1">
-                  Nội dung (HTML)
-                </label>
-                <textarea
-                  value={form.content}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, content: e.target.value }))
-                  }
-                  rows={8}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 resize-none font-mono"
-                  placeholder="<h1>Nội dung bài viết...</h1>"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-700 mb-1">
-                  URL hình ảnh
-                </label>
-                <input
-                  value={form.image_url}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, image_url: e.target.value }))
-                  }
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
-                  placeholder="https://..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-700 mb-1">
-                  Tác giả
-                </label>
-                <input
-                  value={form.author}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, author: e.target.value }))
-                  }
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
                 />
               </div>
             </div>
@@ -454,7 +321,7 @@ export default function AdminCMS() {
                   background: "linear-gradient(135deg, #cc323f, #902131)",
                 }}
               >
-                {editingId ? "Lưu thay đổi" : "Đăng bài"}
+                {editingId ? "Lưu" : "Tạo"}
               </button>
             </div>
           </div>
@@ -471,10 +338,10 @@ export default function AdminCMS() {
               className="font-semibold text-gray-900 mb-1"
               style={{ fontFamily: "Lora, serif" }}
             >
-              Xóa bài viết?
+              Xóa danh mục?
             </h3>
             <p className="text-sm text-gray-500 mb-5">
-              Bài viết sẽ bị xóa vĩnh viễn.
+              Danh mục sẽ bị xóa vĩnh viễn.
             </p>
             <div className="flex gap-3">
               <button

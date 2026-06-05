@@ -9,11 +9,7 @@ import {
   Clock,
   ChevronRight,
 } from "lucide-react";
-import {
-  combos,
-  testimonials,
-  formatCurrency,
-} from "../data";
+import { combos, formatCurrency } from "../data";
 import { comboApi } from "@/features/combos/api";
 
 const HERO_IMG =
@@ -36,25 +32,28 @@ export default function Home() {
   const [apiCombos, setApiCombos] = useState<any[] | null>(null);
 
   useEffect(() => {
-    comboApi.list().then(setApiCombos).catch(() => {});
+    comboApi
+      .list()
+      .then(setApiCombos)
+      .catch(() => {});
   }, []);
 
   const mappedApiCombos = apiCombos
-    ? apiCombos.map(c => ({
+    ? apiCombos.map((c) => ({
         id: c.slug,
         name: c.name,
         price: c.total_combo_vnd || 0,
         originalPrice: c.total_original_vnd || undefined,
-        image: c.banner_url || '',
-        images: [c.banner_url || ''],
+        image: c.banner_url || "",
+        images: [c.banner_url || ""],
         description: c.description,
         items: [],
-        occasion: '',
+        occasion: "",
         rating: 4.5,
         reviews: 0,
-        badge: apiCombos.length > 0 ? 'Tiết kiệm' : undefined,
+        badge: apiCombos.length > 0 ? "Tiết kiệm" : undefined,
         inStock: true,
-        usageGuide: '',
+        usageGuide: "",
       }))
     : null;
   const displayCombos = mappedApiCombos || combos;
@@ -63,7 +62,7 @@ export default function Home() {
   return (
     <div style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}>
       {/* Hero */}
-      <section className="relative min-h-[85vh] flex items-center overflow-hidden">
+      <section className="relative min-h-[70vh] sm:min-h-[85vh] flex items-center overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${HERO_IMG})` }}
@@ -77,8 +76,6 @@ export default function Home() {
         />
         <div className="relative z-10 max-w-7xl w-full pl-6 sm:pl-10 lg:pl-20 pr-6 py-20">
           <div className="max-w-2xl">
-            
-
             <h1
               className="text-white mb-4"
               style={{
@@ -88,16 +85,21 @@ export default function Home() {
                 fontWeight: 700,
               }}
             >
-              Đồ Cúng Tâm Linh{" "}
-              <br />
+              Đồ Cúng Tâm Linh <br />
               <span style={{ color: "#e6bb0c" }}>Chất Lượng Cao</span>
             </h1>
 
-            <div className="mb-8 space-y-2" style={{ color: "rgba(255,255,255,0.85)" }}>
+            <div
+              className="mb-8 space-y-2"
+              style={{ color: "rgba(255,255,255,0.85)" }}
+            >
               <p className="text-base sm:text-lg leading-relaxed pl-[0px] pr-[14px] py-[0px]">
-                Cung cấp mâm cúng, combo lễ vật đầy đủ theo phong tục truyền thống Việt Nam.
+                Cung cấp mâm cúng, combo lễ vật đầy đủ theo phong tục truyền
+                thống Việt Nam.
               </p>
-              <p className="text-base sm:text-lg leading-relaxed">Đặt hàng dễ dàng — giao tận nơi.</p>
+              <p className="text-base sm:text-lg leading-relaxed">
+                Đặt hàng dễ dàng — giao tận nơi.
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-4">
@@ -130,10 +132,7 @@ export default function Home() {
       </section>
 
       {/* Benefits */}
-      <section
-        className="py-6"
-        style={{ backgroundColor: "#902131" }}
-      >
+      <section className="py-6" style={{ backgroundColor: "#902131" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
@@ -158,24 +157,16 @@ export default function Home() {
                 sub: "Online 24/7",
               },
             ].map((b) => (
-              <div
-                key={b.label}
-                className="flex items-center gap-3 py-2"
-              >
+              <div key={b.label} className="flex items-center gap-3 py-2">
                 <b.icon
                   className="w-8 h-8 flex-shrink-0"
                   style={{ color: "#e6bb0c" }}
                 />
                 <div>
-                  <p
-                    className="text-white text-sm"
-                    style={{ fontWeight: 600 }}
-                  >
+                  <p className="text-white text-sm" style={{ fontWeight: 600 }}>
                     {b.label}
                   </p>
-                  <p className="text-white/60 text-xs">
-                    {b.sub}
-                  </p>
+                  <p className="text-white/60 text-xs">{b.sub}</p>
                 </div>
               </div>
             ))}
@@ -184,10 +175,7 @@ export default function Home() {
       </section>
 
       {/* Featured Combos */}
-      <section
-        className="py-16"
-        style={{ backgroundColor: "#f8fafc" }}
-      >
+      <section className="py-16" style={{ backgroundColor: "#f8fafc" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-end mb-8">
             <div>
@@ -216,7 +204,7 @@ export default function Home() {
               <ChevronRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {featuredCombos.map((combo) => (
               <Link
                 key={combo.id}
@@ -251,9 +239,7 @@ export default function Home() {
                     >
                       -
                       {Math.round(
-                        (1 -
-                          combo.price / combo.originalPrice) *
-                          100,
+                        (1 - combo.price / combo.originalPrice) * 100,
                       )}
                       %
                     </span>
@@ -354,10 +340,7 @@ export default function Home() {
                 emoji: "🏠",
               },
             ].map((s) => (
-              <div
-                key={s.step}
-                className="text-center relative"
-              >
+              <div key={s.step} className="text-center relative">
                 <div
                   className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl relative z-10"
                   style={{ backgroundColor: "#fdf4f3" }}
@@ -391,73 +374,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="bg-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <p
-              className="text-sm uppercase tracking-widest mb-1"
-              style={{ color: "#cc323f", fontWeight: 600 }}
-            >
-              Đánh giá
-            </p>
-            <h2
-              style={{
-                fontFamily: "Lora, serif",
-                color: "#0f172a",
-                fontSize: "1.8rem",
-              }}
-            >
-              Khách Hàng Nói Gì?
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {testimonials.map((t) => (
-              <div
-                key={t.id}
-                className="rounded-xl p-5 border"
-                style={{
-                  backgroundColor: "#f8fafc",
-                  borderColor: "rgba(230,187,12,0.2)",
-                }}
-              >
-                <div className="flex gap-0.5 mb-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${i <= t.rating ? "fill-[#e6bb0c] text-[#e6bb0c]" : "text-gray-200"}`}
-                    />
-                  ))}
-                </div>
-                <p className="text-gray-600 text-sm leading-relaxed mb-4 italic">
-                  "{t.content}"
-                </p>
-                <div className="flex items-center gap-3">
-                  <img
-                    src={t.avatar}
-                    alt={t.name}
-                    className="w-9 h-9 rounded-full object-cover"
-                  />
-                  <div>
-                    <p
-                      className="text-sm"
-                      style={{
-                        color: "#0f172a",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {t.name}
-                    </p>
-                    <p className="text-gray-400 text-xs">
-                      {t.product}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* CTA Banner */}
       <section
@@ -483,8 +399,8 @@ export default function Home() {
             Tư Vấn Lễ Vật Miễn Phí
           </h2>
           <p className="text-white/80 mb-6 text-lg">
-            Không biết cúng gì? Hãy để chúng tôi tư vấn miễn
-            phí. Chuyên gia sẵn sàng hỗ trợ bạn 24/7.
+            Không biết cúng gì? Hãy để chúng tôi tư vấn miễn phí. Chuyên gia sẵn
+            sàng hỗ trợ bạn 24/7.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link

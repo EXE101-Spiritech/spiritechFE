@@ -254,11 +254,7 @@ export function ChatBot() {
   const [calEditMode, setCalEditMode] = useState(false);
   const [calInputMo, setCalInputMo] = useState(0);
   const [calInputYr, setCalInputYr] = useState(0);
-  const [calPos, setCalPos] = useState<{ left: number; top: number } | null>(
-    null,
-  );
-  const calContainerRef = useRef<HTMLDivElement>(null);
-  const calDragMoved = useRef(false);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "0",
@@ -282,16 +278,20 @@ export function ChatBot() {
     if (loadedRef.current) return;
     loadedRef.current = true;
     if (sessionId) {
-      getChatMessages(sessionId).then((msgs: any) => {
-        if (msgs && msgs.length > 0) {
-          setMessages(msgs.map((m: any, i: number) => ({
-            id: i.toString(),
-            role: m.role === "user" ? "user" : "bot",
-            text: m.content || "",
-            time: new Date(),
-          })));
-        }
-      }).catch(() => {});
+      getChatMessages(sessionId)
+        .then((msgs: any) => {
+          if (msgs && msgs.length > 0) {
+            setMessages(
+              msgs.map((m: any, i: number) => ({
+                id: i.toString(),
+                role: m.role === "user" ? "user" : "bot",
+                text: m.content || "",
+                time: new Date(),
+              })),
+            );
+          }
+        })
+        .catch(() => {});
     }
   }, []);
 
@@ -434,73 +434,6 @@ export function ChatBot() {
     ]);
   };
 
-  const startCalDrag = (e: React.MouseEvent) => {
-    // Don't start drag on interactive children (buttons, selects)
-    if (
-      (e.target as HTMLElement).closest("button,select") &&
-      e.currentTarget !== e.target
-    )
-      return;
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const rect = calContainerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    calDragMoved.current = false;
-    const elemLeft = rect.left;
-    const elemTop = rect.top;
-    const PAD = 8; // minimum distance from viewport edge
-
-    const onMove = (ev: MouseEvent) => {
-      const dx = ev.clientX - startX;
-      const dy = ev.clientY - startY;
-      if (!calDragMoved.current && Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
-      calDragMoved.current = true;
-      const newLeft = Math.max(
-        PAD,
-        Math.min(window.innerWidth - rect.width - PAD, elemLeft + dx),
-      );
-      const newTop = Math.max(
-        PAD,
-        Math.min(window.innerHeight - rect.height - PAD, elemTop + dy),
-      );
-      setCalPos({ left: newLeft, top: newTop });
-    };
-    const onUp = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
-  };
-
-  // Clamp position back into viewport on window resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (!calPos || !calContainerRef.current) return;
-      const rect = calContainerRef.current.getBoundingClientRect();
-      const PAD = 8;
-      const clampedLeft = Math.max(
-        PAD,
-        Math.min(window.innerWidth - rect.width - PAD, calPos.left),
-      );
-      const clampedTop = Math.max(
-        PAD,
-        Math.min(window.innerHeight - rect.height - PAD, calPos.top),
-      );
-      if (clampedLeft !== calPos.left || clampedTop !== calPos.top) {
-        setCalPos({ left: clampedLeft, top: clampedTop });
-      }
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [calPos]);
-
-  // Reset drag-moved flag on every page change so clicks always work
-  useEffect(() => {
-    calDragMoved.current = false;
-    setCalPos(null); // Reset về góc trái bên dưới mặc định khi chuyển trang
-  }, [location.pathname]);
-
   return (
     <>
       {/* Floating Button */}
@@ -555,10 +488,24 @@ export function ChatBot() {
             <MessageCircle className="w-6 h-6" />
           )}
         </button>
+        {/* Calendar toggle */}
+        {!calOpen && (
+          <button
+            onClick={() => setCalOpen(true)}
+            className="w-11 h-11 rounded-full text-white flex items-center justify-center shadow-xl transition-all hover:scale-110 active:scale-95 flex-shrink-0"
+            style={{
+              background: "linear-gradient(135deg, #cc323f, #e8566a)",
+              boxShadow: "0 4px 16px rgba(204,50,63,0.5)",
+            }}
+            aria-label="Mở lịch cúng"
+          >
+            <Calendar className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* ── Calendar Widget — desktop only ── */}
-      <div className="hidden md:block">
+      <div className="">
         {(() => {
           const today = new Date();
           const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -609,129 +556,15 @@ export function ChatBot() {
 
           return (
             <>
-              {/* Toggle button when closed — all pages */}
-              {!calOpen && (
-                <div
-                  ref={calContainerRef}
-                  className={calPos ? "" : "fixed bottom-14 left-6 z-50"}
-                  style={
-                    calPos
-                      ? {
-                          position: "fixed",
-                          left: calPos.left,
-                          top: calPos.top,
-                          zIndex: 50,
-                        }
-                      : {}
-                  }
-                  onMouseDown={startCalDrag}
-                >
-                  <button
-                    onMouseDown={(e) => {
-                      // Inline drag — bypasses the guard in startCalDrag that blocks when e.target is a child SVG
-                      e.stopPropagation();
-                      const startX = e.clientX;
-                      const startY = e.clientY;
-                      const rect =
-                        calContainerRef.current?.getBoundingClientRect();
-                      if (!rect) return;
-                      calDragMoved.current = false;
-                      const elemLeft = rect.left;
-                      const elemTop = rect.top;
-                      const PAD = 8;
-                      const onMove = (ev: MouseEvent) => {
-                        const dx = ev.clientX - startX;
-                        const dy = ev.clientY - startY;
-                        if (
-                          !calDragMoved.current &&
-                          Math.abs(dx) < 5 &&
-                          Math.abs(dy) < 5
-                        )
-                          return;
-                        calDragMoved.current = true;
-                        const newLeft = Math.max(
-                          PAD,
-                          Math.min(
-                            window.innerWidth - rect.width - PAD,
-                            elemLeft + dx,
-                          ),
-                        );
-                        const newTop = Math.max(
-                          PAD,
-                          Math.min(
-                            window.innerHeight - rect.height - PAD,
-                            elemTop + dy,
-                          ),
-                        );
-                        setCalPos({ left: newLeft, top: newTop });
-                      };
-                      const onUp = () => {
-                        document.removeEventListener("mousemove", onMove);
-                        document.removeEventListener("mouseup", onUp);
-                      };
-                      document.addEventListener("mousemove", onMove);
-                      document.addEventListener("mouseup", onUp);
-                    }}
-                    onClick={(e) => {
-                      if (!calDragMoved.current) {
-                        const r = e.currentTarget.getBoundingClientRect();
-                        const POPUP_W = 248,
-                          POPUP_H = 340,
-                          PAD = 8;
-                        const safeLeft = Math.max(
-                          PAD,
-                          Math.min(window.innerWidth - POPUP_W - PAD, r.left),
-                        );
-                        const safeTop = Math.max(
-                          PAD,
-                          Math.min(window.innerHeight - POPUP_H - PAD, r.top),
-                        );
-                        setCalPos({ left: safeLeft, top: safeTop });
-                        setCalOpen(true);
-                      }
-                    }}
-                    className="w-11 h-11 rounded-full text-white flex items-center justify-center shadow-xl transition-all hover:scale-110 active:scale-95"
-                    style={{
-                      background: "linear-gradient(135deg, #cc323f, #e8566a)",
-                      boxShadow: "0 4px 16px rgba(204,50,63,0.5)",
-                      cursor: "grab",
-                    }}
-                    aria-label="Mở lịch cúng"
-                  >
-                    <Calendar className="w-5 h-5 pointer-events-none" />
-                  </button>
-                </div>
-              )}
-
               {/* Calendar popup */}
-              {calOpen && (
-                <div
-                  ref={calContainerRef}
-                  style={
-                    calPos
-                      ? {
-                          position: "fixed",
-                          left: `${calPos.left}px`,
-                          top: `${calPos.top}px`,
-                          zIndex: 50,
-                          width: "248px",
-                          fontFamily: "Be Vietnam Pro, sans-serif",
-                          userSelect: "none",
-                          overflow: "visible",
-                        }
-                      : {
-                          position: "fixed",
-                          left: "24px",
-                          bottom: "56px",
-                          zIndex: 50,
-                          width: "248px",
-                          fontFamily: "Be Vietnam Pro, sans-serif",
-                          userSelect: "none",
-                          overflow: "visible",
-                        }
-                  }
-                >
-                  {/* Inner visual wrapper */}
+              <div
+                className="fixed bottom-2 right-28 z-50"
+                style={{
+                  width: "248px",
+                  fontFamily: "Be Vietnam Pro, sans-serif",
+                }}
+              >
+                {calOpen && (
                   <div
                     style={{
                       borderRadius: "0.75rem",
@@ -746,11 +579,9 @@ export function ChatBot() {
                       style={{
                         background:
                           "linear-gradient(135deg, #3a0e16 0%, #cc323f 100%)",
-                        cursor: "grab",
                         borderTopLeftRadius: "0.75rem",
                         borderTopRightRadius: "0.75rem",
                       }}
-                      onMouseDown={startCalDrag}
                     >
                       <button
                         onClick={prevMonth}
@@ -1112,8 +943,8 @@ export function ChatBot() {
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>{" "}
             </>
           );
         })()}

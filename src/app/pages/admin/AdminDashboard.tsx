@@ -77,8 +77,15 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     // Load independently so one failure doesn't block the other
-    adminApi.dashboard().then(setDash).catch(() => {});
-    adminApi.revenue(14).then(setRevenue).catch(() => {}).finally(() => setLoading(false));
+    adminApi
+      .dashboard()
+      .then(setDash)
+      .catch(() => {});
+    adminApi
+      .revenue(14)
+      .then(setRevenue)
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {

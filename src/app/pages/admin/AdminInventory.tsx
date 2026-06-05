@@ -1,21 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Minus, Plus, AlertTriangle, Search, RefreshCw, PackageCheck } from 'lucide-react';
-import { inventoryItems as initialItems } from '../../data/adminData';
-import type { InventoryItem } from '../../data/adminData';
+import { productApi } from '@/features/products/api';
+import { adminApi } from '@/features/admin/api';
+
+interface InventoryItem { productId: string; productName: string; sku: string; category: string; stock: number; lowStockThreshold: number; }
 
 export default function AdminInventory() {
-  const [items, setItems] = useState<InventoryItem[]>(initialItems);
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    productApi.list({ limit: 100 }).then(r => {
+      setItems(r.data.map((p: any) => ({
+        productId: p.id,
+        productName: p.name,
+        sku: p.slug,
+        category: p.category || '',
+        stock: 0,
+        lowStockThreshold: 10,
+      })));
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, []);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'low' | 'ok'>('all');
   const [restockModal, setRestockModal] = useState<InventoryItem | null>(null);
   const [restockQty, setRestockQty] = useState(50);
 
   const adjust = (id: string, delta: number) => {
+    adminApi.adjustStock({ product_id: id, variant_id: '', delta, reason: delta > 0 ? 'Manual add' : 'Manual remove' }).catch(() => {});
     setItems(items => items.map(i => i.productId === id ? { ...i, stock: Math.max(0, i.stock + delta) } : i));
   };
 
   const restock = () => {
     if (!restockModal) return;
+    adminApi.receiveStock({ product_id: restockModal.productId, variant_id: '', quantity: restockQty }).catch(() => {});
     setItems(items => items.map(i => i.productId === restockModal.productId ? { ...i, stock: i.stock + restockQty } : i));
     setRestockModal(null);
     setRestockQty(50);

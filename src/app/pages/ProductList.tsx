@@ -71,7 +71,7 @@ export default function ProductList() {
       className="min-h-screen bg-[#f8fafc]"
     >
       {/* Header */}
-      <div className="py-10" style={{ backgroundColor: "#902131" }}>
+      <div className="py-8 sm:py-10" style={{ backgroundColor: "#902131" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="text-white/60 text-sm mb-3">
             <Link to="/" className="hover:text-white">
@@ -178,14 +178,14 @@ export default function ProductList() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
             {filtered.map((product) => (
               <Link
                 key={product.id}
                 to={`/products/${product.id}`}
                 className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
               >
-                <div className="relative overflow-hidden h-44">
+                <div className="relative overflow-hidden h-32 sm:h-44">
                   <img
                     src={product.image}
                     alt={product.name}
