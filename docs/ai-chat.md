@@ -136,6 +136,22 @@ GET https://spiritest.duckdns.org/chat/v1/chat/sessions/{id}
 }
 ```
 
+### GET /v1/chat/sessions/{id}/messages 🔓 Public
+
+Fetch all past messages for a session. Restores chat history on page reload.
+
+```http
+GET https://spiritest.duckdns.org/chat/v1/chat/sessions/{id}/messages
+```
+
+**Response 200:**
+```json
+[
+  {"role": "user", "content": "có bán bàn thờ không?"},
+  {"role": "assistant", "content": "Dạ có bạn ơi!..."}
+]
+```
+
 ---
 
 ## Important Notes

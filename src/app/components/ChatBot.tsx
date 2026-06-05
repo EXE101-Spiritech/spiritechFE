@@ -1,6 +1,11 @@
-import { streamChat, createChatSession } from "@/features/chat/api";
+import {
+  streamChat,
+  createChatSession,
+  getChatMessages,
+} from "@/features/chat/api";
+import { useAuth } from "../context/AuthContext";
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useLocation } from "react-router";
+import { useLocation, Link } from "react-router";
 import {
   MessageCircle,
   X,
@@ -79,6 +84,19 @@ const QUICK_REPLIES_INIT = [
   "Cách đặt hàng",
   "Chính sách đổi trả",
 ];
+
+const SESSION_KEY = "spiritech_chat_session";
+function defaultGreeting(): Message[] {
+  return [
+    {
+      id: "0",
+      role: "bot",
+      text: "Xin chào! 🙏 Chào mừng đến với **Góc An Nhiên**.\n\nTôi là **Trợ lý An Tâm**, sẵn sàng giúp bạn về:\n• Sản phẩm & combo đồ cúng\n• Tư vấn nghi lễ cúng bái\n• Đặt hàng & vận chuyển\n\nBạn cần giúp gì hôm nay?",
+      time: new Date(),
+      quickReplies: QUICK_REPLIES_INIT,
+    },
+  ];
+}
 
 function formatText(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
@@ -227,7 +245,9 @@ export function ChatBot() {
       : location.pathname === p || location.pathname.startsWith(p + "/"),
   );
 
+  const { isLoggedIn } = useAuth();
   const [open, setOpen] = useState(false);
+  const [guestOpen, setGuestOpen] = useState(false);
   const [calOpen, setCalOpen] = useState(true);
   const [calViewDate, setCalViewDate] = useState(new Date());
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
@@ -248,7 +268,33 @@ export function ChatBot() {
       quickReplies: QUICK_REPLIES_INIT,
     },
   ]);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(SESSION_KEY);
+    } catch {
+      return null;
+    }
+  });
+  const loadedRef = useRef(false);
+
+  // On mount: restore past messages from API if session exists
+  useEffect(() => {
+    if (loadedRef.current) return;
+    loadedRef.current = true;
+    if (sessionId) {
+      getChatMessages(sessionId).then((msgs: any) => {
+        if (msgs && msgs.length > 0) {
+          setMessages(msgs.map((m: any, i: number) => ({
+            id: i.toString(),
+            role: m.role === "user" ? "user" : "bot",
+            text: m.content || "",
+            time: new Date(),
+          })));
+        }
+      }).catch(() => {});
+    }
+  }, []);
+
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const [streaming, setStreaming] = useState(false);
@@ -338,6 +384,9 @@ export function ChatBot() {
           },
         );
         setSessionId(newSessionId);
+        try {
+          localStorage.setItem(SESSION_KEY, newSessionId);
+        } catch {}
       } catch {
         setMessages((prev) =>
           prev.map((m) =>
@@ -363,6 +412,17 @@ export function ChatBot() {
   };
 
   const handleReset = () => {
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch {}
+    createChatSession()
+      .then(({ session_id }) => {
+        setSessionId(session_id);
+        try {
+          localStorage.setItem(SESSION_KEY, session_id);
+        } catch {}
+      })
+      .catch(() => {});
     setMessages([
       {
         id: Date.now().toString(),
@@ -473,12 +533,18 @@ export function ChatBot() {
             }}
           >
             <span className="w-2 h-2 bg-green-400 rounded-full inline-block"></span>
-            Trợ lý An Tâm
+            {isLoggedIn ? "Trợ lý An Tâm" : "Đăng nhập để trò chuyện"}
           </div>
         )}
         <button
           ref={toggleBtnRef}
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => {
+            if (isLoggedIn) {
+              setOpen((o) => !o);
+            } else {
+              setGuestOpen(true);
+            }
+          }}
           className="w-14 h-14 rounded-full text-white flex items-center justify-center shadow-2xl transition-all duration-200 hover:scale-110 active:scale-95"
           style={{ backgroundColor: "#cc323f" }}
           aria-label="Chat support"
@@ -1052,6 +1118,48 @@ export function ChatBot() {
           );
         })()}
       </div>
+
+      {/* Guest login prompt */}
+      {guestOpen && !isLoggedIn && (
+        <div
+          className="fixed bottom-24 right-6 z-50 w-80 rounded-2xl overflow-hidden shadow-2xl bg-white text-center p-8"
+          style={{
+            fontFamily: "Be Vietnam Pro, sans-serif",
+            border: "1px solid rgba(204,50,63,0.15)",
+          }}
+        >
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+            style={{ background: "linear-gradient(135deg, #902131, #cc323f)" }}
+          >
+            <span className="text-2xl">🤖</span>
+          </div>
+          <h3
+            className="text-lg font-semibold text-gray-900 mb-2"
+            style={{ fontFamily: "Lora, serif" }}
+          >
+            Trợ lý An Tâm
+          </h3>
+          <p className="text-sm text-gray-500 mb-5">
+            Vui lòng đăng nhập để trò chuyện với trợ lý mua sắm thông minh của
+            Spiritech.
+          </p>
+          <Link
+            to="/login"
+            onClick={() => setGuestOpen(false)}
+            className="block w-full py-3 rounded-xl text-white text-sm font-medium transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, #cc323f, #902131)" }}
+          >
+            Đăng nhập ngay
+          </Link>
+          <button
+            onClick={() => setGuestOpen(false)}
+            className="mt-3 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            Để sau
+          </button>
+        </div>
+      )}
 
       {/* Chat Window */}
       {open && (

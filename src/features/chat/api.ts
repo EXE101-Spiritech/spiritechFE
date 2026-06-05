@@ -1,6 +1,6 @@
-import { CHAT_BASE, getAccessToken } from '@/shared/api/axiosClient';
-import type { StreamEvent, ChatMessage, ChatSession } from '@/shared/types';
-import axiosClient from '@/shared/api/axiosClient';
+import { CHAT_BASE, getAccessToken } from "@/shared/api/axiosClient";
+import type { StreamEvent, ChatMessage, ChatSession } from "@/shared/types";
+import axiosClient from "@/shared/api/axiosClient";
 
 /**
  * Stream a chat message via SSE.
@@ -18,28 +18,32 @@ export async function streamChat(
   const body: Record<string, unknown> = { message };
   if (sessionId) body.session_id = sessionId;
 
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
   const token = getAccessToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const response = await fetch(`${CHAT_BASE}/v1/chat/stream`, {
-    method: 'POST',
+    method: "POST",
     headers,
     body: JSON.stringify(body),
   });
 
   if (!response.ok) {
-    const err = await response.json().catch(() => ({ message: 'unknown error' }));
+    const err = await response
+      .json()
+      .catch(() => ({ message: "unknown error" }));
     throw new Error(err.message || `HTTP ${response.status}`);
   }
 
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
-  let buffer = '';
+  let buffer = "";
 
   const assistantMsg: ChatMessage = {
-    role: 'assistant',
-    content: '',
+    role: "assistant",
+    content: "",
     isStreaming: true,
   };
   onEvent(assistantMsg);
@@ -49,11 +53,11 @@ export async function streamChat(
     if (done) break;
 
     buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
 
     for (const line of lines) {
-      if (!line.startsWith('data: ')) continue;
+      if (!line.startsWith("data: ")) continue;
 
       try {
         const ev: StreamEvent = JSON.parse(line.slice(6));
@@ -108,5 +112,12 @@ export function createChatSession() {
 export function getChatSession(id: string) {
   return axiosClient
     .get<ChatSession>(`${CHAT_BASE}/v1/chat/sessions/${id}`)
+    .then((r) => r.data);
+}
+
+/** Fetch past messages for a session — restores chat history on page reload */
+export function getChatMessages(id: string) {
+  return axiosClient
+    .get<{ role: string; content: string }[]>(`${CHAT_BASE}/v1/chat/sessions/${id}/messages`)
     .then((r) => r.data);
 }

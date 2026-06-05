@@ -1,13 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router';
 import { Clock, Calendar, ArrowLeft, ArrowRight, Zap } from 'lucide-react';
 import { guideArticles, combos, formatCurrency } from '../data';
+import { productApi } from '@/features/products/api';
 import { QuickCheckoutModal } from '../components/QuickCheckoutModal';
 
 export default function GuideDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const article = guideArticles.find(a => a.id === id);
+  const [apiArticle, setApiArticle] = useState<any | null>(undefined);
+
+  useEffect(() => {
+    if (id) {
+      productApi.getBlog(id).then(setApiArticle).catch(() => setApiArticle(null));
+    }
+  }, [id]);
+
+  const article = apiArticle
+    ? {
+        id: apiArticle.slug || apiArticle.id,
+        title: apiArticle.title,
+        excerpt: apiArticle.excerpt || '',
+        content: apiArticle.content || '',
+        image: apiArticle.image_url || '',
+        category: '',
+        readTime: '5 phút',
+        date: apiArticle.created_at ? apiArticle.created_at.slice(0, 10) : '',
+        relatedComboId: null,
+        relatedComboName: null,
+      }
+    : apiArticle === undefined
+      ? guideArticles.find(a => a.id === id)
+      : null;
   const [showModal, setShowModal] = useState(false);
 
   if (!article) {

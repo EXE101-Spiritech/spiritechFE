@@ -51,9 +51,8 @@ export function Navbar() {
     { label: "Trang chủ", to: "/" },
     { label: "Combo", to: "/combo" },
     { label: "Sản phẩm", to: "/products" },
-    { label: "Hướng dẫn", to: "/guide" },
+    { label: "Thông Tin", to: "/guide" },
     { label: "Giới thiệu", to: "/about" },
-    { label: "Liên hệ", to: "/contact" },
   ];
 
   const isActive = (to: string) => {

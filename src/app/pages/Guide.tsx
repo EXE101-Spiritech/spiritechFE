@@ -1,10 +1,33 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { Clock, Calendar, Tag } from 'lucide-react';
 import { guideArticles } from '../data';
+import { productApi } from '@/features/products/api';
 
 export default function Guide() {
-  const featured = guideArticles[0];
-  const rest = guideArticles.slice(1);
+  const [apiArticles, setApiArticles] = useState<any[] | null>(null);
+
+  useEffect(() => {
+    productApi.listBlogs({ size: 20 }).then(r => setApiArticles(r.data)).catch(() => {});
+  }, []);
+
+  const displayArticles = apiArticles && apiArticles.length > 0
+    ? apiArticles.map(a => ({
+        id: a.slug || a.id,
+        title: a.title,
+        excerpt: a.excerpt || '',
+        image: a.image_url || '',
+        category: '',
+        readTime: '5 phút',
+        date: a.created_at ? a.created_at.slice(0, 10) : '',
+        content: '',
+        relatedComboId: null,
+        relatedComboName: null,
+      }))
+    : guideArticles;
+
+  const featured = displayArticles[0];
+  const rest = displayArticles.slice(1);
 
   return (
     <div style={{ fontFamily: 'Be Vietnam Pro, sans-serif' }} className="min-h-screen bg-[#f8fafc]">
@@ -14,10 +37,10 @@ export default function Guide() {
           <nav className="text-white/60 text-sm mb-3">
             <Link to="/" className="hover:text-white">Trang chủ</Link>
             <span className="mx-2">/</span>
-            <span className="text-white">Hướng dẫn</span>
+            <span className="text-white">Thông Tin</span>
           </nav>
           <h1 style={{ fontFamily: 'Lora, serif', color: 'white', fontSize: 'clamp(1.3rem, 3.5vw, 2rem)' }}>
-            Hướng Dẫn Cúng Bái
+            Thông Tin & Kiến Thức
           </h1>
           <p className="text-white/70 mt-1">Kiến thức thờ cúng theo phong tục truyền thống Việt Nam</p>
         </div>
