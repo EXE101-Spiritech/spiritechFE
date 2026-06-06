@@ -59,6 +59,7 @@ export interface UserProfile {
 export interface UserProfileUpdate {
   name?: string;
   email?: string;
+  phone?: string;
   address?: string;
 }
 
