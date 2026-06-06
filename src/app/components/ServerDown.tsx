@@ -8,17 +8,17 @@ interface Props {
 export function ServerDown({ onRetry, retrying }: Props) {
   return (
     <div
-      className="min-h-screen flex items-center justify-center"
-      style={{ background: "#f8fafc", fontFamily: "Be Vietnam Pro, sans-serif" }}
+      className="min-h-screen flex items-center justify-center bg-gray-50"
+      style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}
     >
       <div className="text-center max-w-md px-6">
-        <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ background: "#fef2f2" }}>
-          <Server size={40} style={{ color: "#dc2626" }} />
+        <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-red-50">
+          <Server size={40} className="text-red-600" />
         </div>
 
         <h1
-          className="text-2xl font-semibold mb-2"
-          style={{ color: "#0f172a", fontFamily: "Lora, serif" }}
+          className="text-2xl font-semibold mb-2 text-gray-900"
+          style={{ fontFamily: "Lora, serif" }}
         >
           Máy chủ không phản hồi
         </h1>
@@ -31,8 +31,7 @@ export function ServerDown({ onRetry, retrying }: Props) {
         <button
           onClick={onRetry}
           disabled={retrying}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-medium transition-all hover:shadow-md disabled:opacity-50"
-          style={{ background: "#cc323f" }}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-medium transition-all hover:shadow-md disabled:opacity-50 bg-rose-700"
         >
           <RefreshCw size={18} className={retrying ? "animate-spin" : ""} />
           {retrying ? "Đang thử lại..." : "Thử lại"}

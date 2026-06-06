@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { ContentRenderer } from "./ContentRenderer";
 
 // ─── Dữ liệu ngày cúng / lễ ─────────────────────────────────────────────────
 const RITUAL_DAYS: Record<
@@ -248,7 +249,7 @@ export function ChatBot() {
   const { isLoggedIn } = useAuth();
   const [open, setOpen] = useState(false);
   const [guestOpen, setGuestOpen] = useState(false);
-  const [calOpen, setCalOpen] = useState(true);
+  const [calOpen, setCalOpen] = useState(false);
   const [calViewDate, setCalViewDate] = useState(new Date());
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
   const [calEditMode, setCalEditMode] = useState(false);
@@ -277,7 +278,7 @@ export function ChatBot() {
   useEffect(() => {
     if (loadedRef.current) return;
     loadedRef.current = true;
-    if (sessionId) {
+    if (sessionId && isLoggedIn) {
       getChatMessages(sessionId)
         .then((msgs: any) => {
           if (msgs && msgs.length > 0) {
@@ -345,6 +346,7 @@ export function ChatBot() {
   const sendMessage = useCallback(
     async (text: string) => {
       if (!text.trim() || streaming) return;
+      if (!isLoggedIn) return;
       const userMsg: Message = {
         id: Date.now().toString(),
         role: "user",
@@ -415,6 +417,7 @@ export function ChatBot() {
     try {
       localStorage.removeItem(SESSION_KEY);
     } catch {}
+    if (!isLoggedIn) { setMessages([]); return; }
     createChatSession()
       .then(({ session_id }) => {
         setSessionId(session_id);
@@ -996,7 +999,7 @@ export function ChatBot() {
       {open && (
         <div
           ref={chatRef}
-          className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 flex flex-col rounded-2xl overflow-hidden shadow-2xl"
+          className="fixed bottom-24 right-6 z-50 w-[460px] sm:w-[540px] flex flex-col rounded-2xl overflow-hidden shadow-2xl"
           style={{
             height: "520px",
             fontFamily: "Be Vietnam Pro, sans-serif",
@@ -1060,7 +1063,7 @@ export function ChatBot() {
                 </div>
 
                 <div
-                  className={`flex flex-col gap-1.5 max-w-[78%] ${msg.role === "user" ? "items-end" : "items-start"}`}
+                  className={`flex flex-col gap-1.5 max-w-[85%] ${msg.role === "user" ? "items-end" : "items-start"}`}
                 >
                   <div
                     className="px-3 py-2.5 rounded-2xl"
@@ -1079,7 +1082,7 @@ export function ChatBot() {
                           }
                     }
                   >
-                    <BubbleText text={msg.text} />
+                    <ContentRenderer content={msg.text} />
                   </div>
                   <span className="text-xs text-gray-400 px-1">
                     {msg.time.toLocaleTimeString("vi-VN", {

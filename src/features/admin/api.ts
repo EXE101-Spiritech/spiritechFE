@@ -144,13 +144,35 @@ export const adminApi = {
 
   // ── Orders (Admin) ─────────────────────────────────────────────────────────
 
+  /** List all orders (paginated) */
+  listOrders: (params?: { status?: string; page?: number; size?: number }) =>
+    axiosClient
+      .get<{ data: any[]; page: number; size: number; total: number }>(
+        "/admin/orders",
+        { params },
+      )
+      .then((r) => r.data),
+
+  /** Update order status — send the target status string */
+  updateOrderStatus: (orderId: string, status: string) =>
+    axiosClient
+      .put<{
+        order_id: string;
+        status: string;
+        updated: boolean;
+      }>(`/admin/orders/${orderId}/status`, { status })
+      .then((r) => r.data),
+
   /** Set carrier + tracking for an order */
   setShipping: (orderId: string, data: SetShippingReq) =>
-    axiosClient.patch(`/admin/orders/${orderId}/shipping`, data),
-
-  /** Advance order to the next valid status */
-  advanceOrderStatus: (orderId: string) =>
-    axiosClient.patch(`/admin/orders/${orderId}/status`),
+    axiosClient
+      .put<{
+        order_id: string;
+        carrier: string;
+        tracking: string;
+        updated: boolean;
+      }>(`/admin/orders/${orderId}/shipping`, data)
+      .then((r) => r.data),
 
   // ── Combos (Admin) ─────────────────────────────────────────────────────────
 

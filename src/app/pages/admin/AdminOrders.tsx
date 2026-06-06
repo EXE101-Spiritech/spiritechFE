@@ -1,77 +1,146 @@
-import { useState } from "react";
-import { Search, X, ChevronDown } from "lucide-react";
-import { formatCurrency } from "../../data/index";
+import { useState, useEffect } from "react";
+import {
+  Search,
+  ChevronDown,
+  Truck,
+  X,
+  CheckCircle,
+  Package,
+} from "lucide-react";
 import { adminApi } from "@/features/admin/api";
+import { formatCurrency } from "../../data/index";
 
-const PAYMENT_LABELS: Record<
-  string,
-  { label: string; color: string; bg: string }
-> = {
-  paid: { label: "Đã thanh toán", color: "#16a34a", bg: "#f0fdf4" },
-  pending: { label: "Chờ thanh toán", color: "#d97706", bg: "#fffbeb" },
-  failed: { label: "Thất bại", color: "#dc2626", bg: "#fef2f2" },
+const STATUS_OPTIONS = [
+  { value: "", label: "Tất cả" },
+  { value: "pending_payment", label: "Chờ thanh toán" },
+  { value: "paid", label: "Đã thanh toán" },
+  { value: "confirmed", label: "Đã xác nhận" },
+  { value: "fulfilling", label: "Đang chuẩn bị" },
+  { value: "shipped", label: "Đã giao vận chuyển" },
+  { value: "delivered", label: "Đã nhận hàng" },
+  { value: "cancelled", label: "Đã hủy" },
+  { value: "refunded", label: "Đã hoàn tiền" },
+  { value: "failed", label: "Thanh toán thất bại" },
+];
+
+const STATUS_COLORS: Record<string, string> = {
+  pending_payment: "#d97706",
+  paid: "#2563eb",
+  confirmed: "#16a34a",
+  fulfilling: "#7c3aed",
+  shipped: "#cc323f",
+  delivered: "#16a34a",
+  cancelled: "#6b7280",
+  refunded: "#6b7280",
+  failed: "#dc2626",
+};
+const STATUS_BG: Record<string, string> = {
+  pending_payment: "#fffbeb",
+  paid: "#eff6ff",
+  confirmed: "#f0fdf4",
+  fulfilling: "#f5f3ff",
+  shipped: "#fef2f2",
+  delivered: "#f0fdf4",
+  cancelled: "#f9fafb",
+  refunded: "#f9fafb",
+  failed: "#fef2f2",
 };
 
-const ORDER_STATUS_LABELS: Record<
-  string,
-  { label: string; color: string; bg: string }
-> = {
-  pending: { label: "Chờ xử lý", color: "#d97706", bg: "#fffbeb" },
-  paid: { label: "Đã thanh toán", color: "#2563eb", bg: "#eff6ff" },
-  completed: { label: "Hoàn thành", color: "#16a34a", bg: "#f0fdf4" },
-};
-
-const Badge = ({
-  status,
-  map,
-}: {
-  status: string;
-  map: typeof PAYMENT_LABELS;
-}) => {
-  const s = map[status] || { label: status, color: "#6b7280", bg: "#f3f4f6" };
-  return (
-    <span
-      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-      style={{ color: s.color, background: s.bg }}
-    >
-      {s.label}
-    </span>
-  );
-};
+const STATUS_LABEL: Record<string, string> = Object.fromEntries(
+  STATUS_OPTIONS.filter((s) => s.value).map((s) => [s.value, s.label]),
+);
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [filterStatus, setFilterStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [newStatus, setNewStatus] = useState("");
+  const [shippingCarrier, setShippingCarrier] = useState("");
+  const [shippingTracking, setShippingTracking] = useState("");
+  const [updating, setUpdating] = useState(false);
+  const [updateMsg, setUpdateMsg] = useState("");
 
-  const filtered = orders.filter((o: any) => {
-    const matchSearch =
-      o.id.toLowerCase().includes(search.toLowerCase()) ||
-      o.customer.toLowerCase().includes(search.toLowerCase());
-    const matchStatus =
-      filterStatus === "all" || o.orderStatus === filterStatus;
-    return matchSearch && matchStatus;
-  });
-
-  const updateStatus = (
-    id: string,
-    status: "pending" | "paid" | "completed",
-  ) => {
-    // Call admin API to advance status
-    try {
-      adminApi.advanceOrderStatus(id).catch(() => {});
-    } catch {}
-    setOrders((os: any[]) =>
-      os.map((o: any) => (o.id === id ? { ...o, orderStatus: status } : o)),
-    );
-    if (selectedOrder?.id === id)
-      setSelectedOrder((o: any) => (o ? { ...o, orderStatus: status } : null));
+  const load = (p = page) => {
+    setLoading(true);
+    adminApi
+      .listOrders({ status: filterStatus || undefined, page: p, size: 20 })
+      .then((r: any) => {
+        setOrders(Array.isArray(r) ? r : r.data || []);
+        setTotal(r.total || 0);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   };
 
-  const totalRevenue = orders
-    .filter((o) => o.paymentStatus === "paid")
-    .reduce((s, o) => s + o.total, 0);
+  useEffect(() => {
+    load(1);
+    setPage(1);
+  }, [filterStatus]);
+
+  const filtered = orders.filter(
+    (o: any) =>
+      o.order_number?.toLowerCase().includes(search.toLowerCase()) ||
+      o.id?.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const openOrder = (o: any) => {
+    setSelectedOrder(o);
+    setNewStatus(o.status);
+    setShippingCarrier(o.carrier || "");
+    setShippingTracking(o.tracking || "");
+    setUpdateMsg("");
+  };
+
+  const updateStatus = async () => {
+    if (!newStatus || newStatus === selectedOrder.status) return;
+    setUpdating(true);
+    setUpdateMsg("");
+    try {
+      const res = await adminApi.updateOrderStatus(selectedOrder.id, newStatus);
+      setSelectedOrder((prev: any) => ({ ...prev, status: res.status }));
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === selectedOrder.id ? { ...o, status: res.status } : o,
+        ),
+      );
+      setUpdateMsg("Cập nhật trạng thái thành công!");
+    } catch (err: any) {
+      setUpdateMsg(err?.response?.data?.message || "Cập nhật thất bại");
+    }
+    setUpdating(false);
+  };
+
+  const updateShipping = async () => {
+    if (!shippingCarrier || !shippingTracking) return;
+    setUpdating(true);
+    setUpdateMsg("");
+    try {
+      const res = await adminApi.setShipping(selectedOrder.id, {
+        carrier: shippingCarrier,
+        tracking: shippingTracking,
+      });
+      setSelectedOrder((prev: any) => ({
+        ...prev,
+        carrier: res.carrier,
+        tracking: res.tracking,
+      }));
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === selectedOrder.id
+            ? { ...o, carrier: res.carrier, tracking: res.tracking }
+            : o,
+        ),
+      );
+      setUpdateMsg("Cập nhật vận chuyển thành công!");
+    } catch (err: any) {
+      setUpdateMsg(err?.response?.data?.message || "Cập nhật thất bại");
+    }
+    setUpdating(false);
+  };
 
   return (
     <div style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}>
@@ -83,41 +152,10 @@ export default function AdminOrders() {
           >
             Đơn hàng
           </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {orders.length} đơn • Doanh thu:{" "}
-            <span className="font-medium" style={{ color: "#cc323f" }}>
-              {formatCurrency(totalRevenue)}
-            </span>
-          </p>
+          <p className="text-sm text-gray-500 mt-0.5">{total} đơn hàng</p>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        {(["pending", "paid", "completed"] as const).map((s) => {
-          const count = orders.filter((o) => o.orderStatus === s).length;
-          const conf = ORDER_STATUS_LABELS[s];
-          return (
-            <button
-              key={s}
-              onClick={() =>
-                setFilterStatus(s === (filterStatus as any) ? "all" : s)
-              }
-              className={`bg-white rounded-2xl p-4 shadow-sm border text-left transition-all ${filterStatus === s ? "border-red-300 ring-1 ring-red-200" : "border-gray-100"}`}
-            >
-              <p
-                className="text-2xl font-semibold"
-                style={{ color: conf.color }}
-              >
-                {count}
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5">{conf.label}</p>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1 max-w-xs">
           <Search
@@ -127,24 +165,31 @@ export default function AdminOrders() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm mã đơn hoặc khách hàng..."
-            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
+            placeholder="Tìm mã đơn hàng..."
+            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none"
           />
         </div>
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none bg-white"
+          className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white"
         >
-          <option value="all">Tất cả trạng thái</option>
-          <option value="pending">Chờ xử lý</option>
-          <option value="paid">Đã thanh toán</option>
-          <option value="completed">Hoàn thành</option>
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
         </select>
+        <button
+          onClick={() => load()}
+          className="px-4 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600 hover:bg-gray-50"
+        >
+          Làm mới
+        </button>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Order List */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -155,98 +200,91 @@ export default function AdminOrders() {
                 <th className="text-left px-5 py-3.5 text-gray-500 font-medium">
                   Mã đơn
                 </th>
-                <th className="text-left px-5 py-3.5 text-gray-500 font-medium">
-                  Khách hàng
-                </th>
                 <th className="text-left px-5 py-3.5 text-gray-500 font-medium hidden sm:table-cell">
                   Ngày đặt
                 </th>
                 <th className="text-right px-5 py-3.5 text-gray-500 font-medium">
                   Tổng tiền
                 </th>
-                <th className="text-center px-5 py-3.5 text-gray-500 font-medium hidden md:table-cell">
-                  Thanh toán
-                </th>
                 <th className="text-center px-5 py-3.5 text-gray-500 font-medium">
                   Trạng thái
                 </th>
                 <th className="text-center px-5 py-3.5 text-gray-500 font-medium">
-                  Chi tiết
+                  Vận chuyển
+                </th>
+                <th className="text-center px-5 py-3.5 text-gray-500 font-medium">
+                  Thao tác
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filtered.map((order) => (
+              {filtered.map((o: any) => (
                 <tr
-                  key={order.id}
+                  key={o.id}
                   className="hover:bg-gray-50/50 transition-colors"
                 >
-                  <td
-                    className="px-5 py-3.5 font-mono text-sm font-medium"
-                    style={{ color: "#902131" }}
-                  >
-                    #{order.id}
+                  <td className="px-5 py-3.5">
+                    <p
+                      className="font-mono text-sm font-medium"
+                      style={{ color: "#902131" }}
+                    >
+                      #{o.order_number}
+                    </p>
+                    <p className="text-xs text-gray-400 font-mono mt-0.5">
+                      {o.id.slice(0, 8)}...
+                    </p>
                   </td>
-                  <td className="px-5 py-3.5 text-gray-800">
-                    {order.customer}
-                  </td>
-                  <td className="px-5 py-3.5 text-gray-500 hidden sm:table-cell">
-                    {order.date}
+                  <td className="px-5 py-3.5 text-gray-500 text-xs hidden sm:table-cell">
+                    {o.placed_at
+                      ? new Date(o.placed_at).toLocaleDateString("vi-VN")
+                      : "—"}
                   </td>
                   <td
                     className="px-5 py-3.5 text-right font-semibold"
                     style={{ color: "#cc323f" }}
                   >
-                    {formatCurrency(order.total)}
-                  </td>
-                  <td className="px-5 py-3.5 text-center hidden md:table-cell">
-                    <Badge status={order.paymentStatus} map={PAYMENT_LABELS} />
+                    {formatCurrency(o.total_vnd)}
                   </td>
                   <td className="px-5 py-3.5 text-center">
-                    <div className="relative inline-block">
-                      <select
-                        value={order.orderStatus}
-                        onChange={(e) =>
-                          updateStatus(order.id, e.target.value as any)
-                        }
-                        className="appearance-none pl-3 pr-7 py-1.5 rounded-full text-xs font-medium border-0 focus:outline-none focus:ring-1 cursor-pointer"
-                        style={{
-                          color: ORDER_STATUS_LABELS[order.orderStatus]?.color,
-                          background:
-                            ORDER_STATUS_LABELS[order.orderStatus]?.bg,
-                        }}
-                      >
-                        <option value="pending">Chờ xử lý</option>
-                        <option value="paid">Đã thanh toán</option>
-                        <option value="completed">Hoàn thành</option>
-                      </select>
-                      <ChevronDown
-                        size={10}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500"
-                      />
-                    </div>
+                    <span
+                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                      style={{
+                        color: STATUS_COLORS[o.status] || "#6b7280",
+                        background: STATUS_BG[o.status] || "#f9fafb",
+                      }}
+                    >
+                      {STATUS_LABEL[o.status] || o.status}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3.5 text-center text-xs text-gray-500">
+                    {o.carrier ? `${o.carrier} · ${o.tracking || ""}` : "—"}
                   </td>
                   <td className="px-5 py-3.5 text-center">
                     <button
-                      onClick={() => setSelectedOrder(order)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                      onClick={() => openOrder(o)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50"
                     >
-                      Xem
+                      Quản lý
                     </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {filtered.length === 0 && (
+          {!loading && filtered.length === 0 && (
             <div className="text-center py-12 text-gray-400">
-              Không tìm thấy đơn hàng nào.
+              Không tìm thấy đơn hàng.
+            </div>
+          )}
+          {loading && (
+            <div className="text-center py-12">
+              <span className="inline-block w-5 h-5 border-2 border-[#cc323f] border-t-transparent rounded-full animate-spin" />
             </div>
           )}
         </div>
       </div>
 
-      {/* Order Detail Modal */}
+      {/* Order Management Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -256,99 +294,67 @@ export default function AdminOrders() {
                   className="font-semibold text-gray-900"
                   style={{ fontFamily: "Lora, serif" }}
                 >
-                  Chi tiết đơn hàng
+                  Đơn hàng #{selectedOrder.order_number}
                 </h3>
-                <p className="text-xs text-gray-400 mt-0.5 font-mono">
-                  #{selectedOrder.id}
+                <p className="text-xs text-gray-400 font-mono mt-0.5">
+                  {selectedOrder.id}
                 </p>
               </div>
               <button
-                onClick={() => setSelectedOrder(null)}
-                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                onClick={() => {
+                  setSelectedOrder(null);
+                  setUpdateMsg("");
+                }}
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-600"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="px-6 py-4 space-y-5">
-              {/* Customer & Shipping */}
-              <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Thông tin giao hàng
-                </p>
-                <p className="text-sm font-medium text-gray-800">
-                  {selectedOrder.shipping.name}
-                </p>
-                <p className="text-sm text-gray-600">
-                  {selectedOrder.shipping.phone}
-                </p>
-                <p className="text-sm text-gray-600">
-                  {selectedOrder.shipping.address}
-                </p>
+            <div className="px-6 py-4 space-y-4">
+              {updateMsg && (
+                <div
+                  className={`rounded-xl px-4 py-3 text-sm ${updateMsg.includes("thành công") ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-600 border border-red-200"}`}
+                >
+                  {updateMsg}
+                </div>
+              )}
+
+              <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Tạm tính</span>
+                  <span className="font-medium">
+                    {formatCurrency(selectedOrder.subtotal_vnd)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Giảm giá</span>
+                  <span className="font-medium text-green-600">
+                    -{formatCurrency(selectedOrder.discount_vnd)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">VAT</span>
+                  <span>{formatCurrency(selectedOrder.vat_vnd)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Phí ship</span>
+                  <span>{formatCurrency(selectedOrder.shipping_vnd)}</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-gray-200">
+                  <span className="font-semibold text-gray-900">Tổng cộng</span>
+                  <span className="font-bold" style={{ color: "#cc323f" }}>
+                    {formatCurrency(selectedOrder.total_vnd)}
+                  </span>
+                </div>
+              </div>
+
+              {selectedOrder.placed_at && (
                 <p className="text-xs text-gray-400">
-                  Vận chuyển:{" "}
-                  {selectedOrder.shipping.method === "express"
-                    ? "🚀 Hỏa tốc"
-                    : "📦 Tiêu chuẩn"}
+                  Đặt lúc:{" "}
+                  {new Date(selectedOrder.placed_at).toLocaleString("vi-VN")}
                 </p>
-              </div>
-
-              {/* Items */}
-              <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
-                  Sản phẩm đặt hàng
-                </p>
-                <div className="space-y-2">
-                  {selectedOrder.items.map((item: any, i: number) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"
-                    >
-                      <div>
-                        <p className="text-sm text-gray-800">{item.name}</p>
-                        <p className="text-xs text-gray-400">
-                          x{item.qty} × {formatCurrency(item.price)}
-                        </p>
-                      </div>
-                      <p
-                        className="text-sm font-semibold"
-                        style={{ color: "#cc323f" }}
-                      >
-                        {formatCurrency(item.price * item.qty)}
-                      </p>
-                    </div>
-                  ))}
-                  <div className="flex justify-between pt-2">
-                    <span className="text-sm font-semibold text-gray-900">
-                      Tổng cộng
-                    </span>
-                    <span
-                      className="text-base font-bold"
-                      style={{ color: "#cc323f" }}
-                    >
-                      {formatCurrency(selectedOrder.total)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Status */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-500 mb-1">Thanh toán</p>
-                  <Badge
-                    status={selectedOrder.paymentStatus}
-                    map={PAYMENT_LABELS}
-                  />
-                </div>
-                <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-500 mb-1">Trạng thái đơn</p>
-                  <Badge
-                    status={selectedOrder.orderStatus}
-                    map={ORDER_STATUS_LABELS}
-                  />
-                </div>
-              </div>
+              )}
 
               {/* Update Status */}
               <div>
@@ -356,26 +362,68 @@ export default function AdminOrders() {
                   Cập nhật trạng thái
                 </p>
                 <div className="flex gap-2">
-                  {(["pending", "paid", "completed"] as const).map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => updateStatus(selectedOrder.id, s)}
-                      className={`flex-1 py-2 rounded-xl text-xs font-medium transition-all border ${selectedOrder.orderStatus === s ? "border-red-300" : "border-gray-200 hover:bg-gray-50"}`}
-                      style={
-                        selectedOrder.orderStatus === s
-                          ? {
-                              background: "#cc323f",
-                              color: "#fff",
-                              borderColor: "#cc323f",
-                            }
-                          : { color: "#6b7280" }
-                      }
-                    >
-                      {ORDER_STATUS_LABELS[s].label}
-                    </button>
-                  ))}
+                  <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white"
+                  >
+                    {STATUS_OPTIONS.filter((s) => s.value).map((s) => (
+                      <option
+                        key={s.value}
+                        value={s.value}
+                        disabled={s.value === selectedOrder.status}
+                      >
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={updateStatus}
+                    disabled={updating || newStatus === selectedOrder.status}
+                    className="px-4 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-40"
+                    style={{ background: "#cc323f" }}
+                  >
+                    <CheckCircle size={16} />
+                  </button>
                 </div>
               </div>
+
+              {/* Update Shipping */}
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                  <Truck size={14} className="inline mr-1" />
+                  Thông tin vận chuyển
+                </p>
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <input
+                    value={shippingCarrier}
+                    onChange={(e) => setShippingCarrier(e.target.value)}
+                    placeholder="Hãng vận chuyển"
+                    className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm"
+                  />
+                  <input
+                    value={shippingTracking}
+                    onChange={(e) => setShippingTracking(e.target.value)}
+                    placeholder="Mã vận đơn"
+                    className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm"
+                  />
+                </div>
+                <button
+                  onClick={updateShipping}
+                  disabled={updating || !shippingCarrier || !shippingTracking}
+                  className="w-full py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-40"
+                  style={{ background: "#2563eb" }}
+                >
+                  Cập nhật vận chuyển
+                </button>
+              </div>
+
+              {updating && (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <span className="inline-block w-4 h-4 border-2 border-[#cc323f] border-t-transparent rounded-full animate-spin" />
+                  Đang cập nhật...
+                </div>
+              )}
             </div>
           </div>
         </div>
