@@ -114,7 +114,7 @@ export default function AdminAnalytics() {
       adminApi.aiUsage(range),
     ])
       .then(([r, tp, obs, ue, ai]) => {
-        const chartData = r.by_date.map((d) => ({
+        const chartData = (r.by_date || []).map((d) => ({
           date: d.date.slice(5, 10),
           revenue: d.revenue_vnd,
           orders: d.orders,
