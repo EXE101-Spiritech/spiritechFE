@@ -99,6 +99,7 @@ export default function AdminAnalytics() {
   const [ordersByStatus, setOrdersByStatus] = useState<OrdersByStatus | null>(
     null,
   );
+
   const [engagement, setEngagement] = useState<UserEngagement | null>(null);
   const [aiUsage, setAIUsage] = useState<AIUsage | null>(null);
   const [loading, setLoading] = useState(true);
@@ -525,7 +526,7 @@ export default function AdminAnalytics() {
                 <span className="text-xs text-gray-500">Chi phí AI</span>
               </div>
               <p className="text-2xl font-bold text-gray-900">
-                ${(aiUsage.tokens.total_cost_cents / 100).toFixed(2)}
+                ${(aiUsage.tokens.total_cost_cents / 10000).toFixed(2)}
               </p>
               <p className="text-xs text-gray-400 mt-0.5">
                 {aiUsage.tokens.output_tokens.toLocaleString()} output tokens
@@ -537,14 +538,14 @@ export default function AdminAnalytics() {
                 <span className="text-xs text-gray-500">Công cụ gọi</span>
               </div>
               <p className="text-2xl font-bold text-gray-900">
-                {aiUsage.tools.reduce((s, t) => s + t.count, 0)}
+                {(aiUsage.tools || []).reduce((s, t) => s + t.count, 0)}
               </p>
               <p className="text-xs text-gray-400 mt-0.5">
-                {aiUsage.tools.length} loại công cụ
+                {(aiUsage.tools || []).length} loại công cụ
               </p>
             </div>
           </div>
-          {aiUsage.tools.length > 0 && (
+          {(aiUsage.tools || []).length > 0 && (
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
                 Chi tiết công cụ AI
@@ -568,7 +569,7 @@ export default function AdminAnalytics() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {aiUsage.tools.map((t) => (
+                    {(aiUsage.tools || []).map((t) => (
                       <tr key={t.tool_name}>
                         <td className="px-4 py-2.5 font-mono text-xs text-gray-700">
                           {t.tool_name}

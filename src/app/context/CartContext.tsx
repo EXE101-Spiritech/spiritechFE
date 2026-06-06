@@ -102,7 +102,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem(CART_ID_KEY, cid);
         }
 
-        await cartApi.addItem(cid, { variant_id: item.variantId, quantity: 1 });
+        await cartApi.addItem(cid, { product_id: item.variantId, quantity: 1 });
         const updated = await cartApi.get(cid);
         setVersion(updated.version);
       }
@@ -140,7 +140,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       if (cartId && getAccessToken()) {
         await cartApi
-          .addItem(cartId, { variant_id: variantId, quantity })
+          .addItem(cartId, { product_id: variantId, quantity })
           .catch(() => {});
         const updated = await cartApi.get(cartId).catch(() => null);
         if (updated) setVersion(updated.version);

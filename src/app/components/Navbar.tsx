@@ -3,32 +3,12 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { ShoppingCart, Search, User, Menu, X, TrendingUp } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
-import { products, combos, formatCurrency } from "../data";
+import { formatCurrency } from "../data";
 import { Logo } from "./Logo";
 import { AdminBadge } from "./AdminBadge";
 
-const popularProducts = [...products]
-  .sort((a, b) => b.reviews - a.reviews)
-  .slice(0, 5);
-
-const allItems = [
-  ...products.map((p) => ({
-    id: p.id,
-    name: p.name,
-    type: "product" as const,
-    image: p.image,
-    price: p.price,
-    badge: p.badge,
-  })),
-  ...combos.map((c) => ({
-    id: c.id,
-    name: c.name,
-    type: "combo" as const,
-    image: c.image,
-    price: c.price,
-    badge: c.badge,
-  })),
-];
+const popularProducts: any[] = [];
+const allItems: any[] = [];
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);

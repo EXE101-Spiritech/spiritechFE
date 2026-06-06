@@ -1,10 +1,6 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Search, X, Eye, EyeOff } from "lucide-react";
-import {
-  products as initialProducts,
-  combos as initialCombos,
-  formatCurrency,
-} from "../../data/index";
+import { formatCurrency } from "../../data/index";
 import { productApi } from "@/features/products/api";
 import { adminApi, Category } from "@/features/admin/api";
 
@@ -20,35 +16,12 @@ interface AdminProduct {
   description: string;
 }
 
-const toAdminProducts = (): AdminProduct[] => [
-  ...initialProducts.map((p) => ({
-    id: p.id,
-    name: p.name,
-    category: p.category,
-    price: p.price,
-    stock: Math.floor(Math.random() * 150) + 5,
-    status: "active" as const,
-    image: p.image,
-    description: p.description,
-  })),
-  ...initialCombos.map((c) => ({
-    id: c.id,
-    name: c.name,
-    category: "Combo",
-    price: c.price,
-    stock: Math.floor(Math.random() * 60) + 5,
-    status: "active" as const,
-    image: c.image,
-    description: c.description,
-  })),
-];
+const toAdminProducts = (): AdminProduct[] => [];
 
-const EMPTY_FORM: Omit<AdminProduct, "id"> = {
+const EMPTY_FORM = {
   name: "",
-  category: "",
   price: 0,
-  stock: 0,
-  status: "active",
+  status: "active" as const,
   image: "",
   description: "",
 };
@@ -99,7 +72,7 @@ export default function AdminProducts() {
   const [filterCat, setFilterCat] = useState("Tất cả");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<Omit<AdminProduct, "id">>(EMPTY_FORM);
+  const [form, setForm] = useState<any>(EMPTY_FORM);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const allCats = ["Tất cả", ...categories.map((c) => c.Name)];
@@ -112,18 +85,15 @@ export default function AdminProducts() {
 
   const openAdd = () => {
     setEditingId(null);
-    const defaultCat = categories.length > 0 ? categories[0].Name : "";
-    setForm({ ...EMPTY_FORM, category: defaultCat });
+    setForm({ ...EMPTY_FORM });
     setModalOpen(true);
   };
 
   const openEdit = (p: AdminProduct) => {
-    setEditingId(p.id);
+    setEditingId(p.productId || p.id);
     setForm({
       name: p.name,
-      category: p.category,
       price: p.price,
-      stock: p.stock,
       status: p.status,
       image: p.image,
       description: p.description,
@@ -133,18 +103,28 @@ export default function AdminProducts() {
 
   const handleSave = async () => {
     if (!form.name.trim() || !form.price) return;
-    const catId = categories.find((c) => c.Name === form.category)?.ID;
     if (editingId) {
+      const slug = form.name
+        .toLowerCase()
+        .replace(/\u0111/g, "d")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
       adminApi
         .updateProduct(editingId || "", {
+          slug,
           name: form.name,
+          description: form.description || undefined,
           base_price_vnd: form.price,
           images: form.image ? [form.image] : [],
-          category_id: catId || undefined,
+          status: form.status,
         })
         .catch(() => {});
       setProducts((ps) =>
-        ps.map((p) => (p.id === editingId ? { ...p, ...form } : p)),
+        ps.map((p) =>
+          p.id === editingId || p.productId === editingId
+            ? { ...p, ...form }
+            : p,
+        ),
       );
     } else {
       const slug = form.name
@@ -157,7 +137,6 @@ export default function AdminProducts() {
           name: form.name,
           base_price_vnd: form.price,
           images: form.image ? [form.image] : [],
-          category_id: catId || undefined,
         })
         .then((res: any) => {
           const newId = res.slug || res.product_id || slug;
@@ -182,12 +161,14 @@ export default function AdminProducts() {
   };
 
   const toggleStatus = (id: string) => {
+    const item = products.find((p) => p.id === id);
+    if (!item) return;
+    const newStatus = item.status === "active" ? "hidden" : "active";
+    adminApi
+      .updateProduct(item.productId || id, { status: newStatus })
+      .catch(() => {});
     setProducts((ps) =>
-      ps.map((p) =>
-        p.id === id
-          ? { ...p, status: p.status === "active" ? "hidden" : "active" }
-          : p,
-      ),
+      ps.map((p) => (p.id === id ? { ...p, status: newStatus } : p)),
     );
   };
 
@@ -383,7 +364,7 @@ export default function AdminProducts() {
                 <input
                   value={form.name}
                   onChange={(e) =>
-                    setForm((f) => ({ ...f, name: e.target.value }))
+                    setForm((f: any) => ({ ...f, name: e.target.value }))
                   }
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
                   placeholder="Nhập tên sản phẩm..."
@@ -392,33 +373,12 @@ export default function AdminProducts() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm text-gray-700 mb-1">
-                    Danh mục
-                  </label>
-                  <select
-                    value={form.category}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, category: e.target.value }))
-                    }
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none bg-white"
-                  >
-                    {categories.length === 0 && (
-                      <option value="">Đang tải...</option>
-                    )}
-                    {categories.map((c) => (
-                      <option key={c.ID} value={c.Name}>
-                        {c.Name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">
                     Trạng thái
                   </label>
                   <select
                     value={form.status}
                     onChange={(e) =>
-                      setForm((f) => ({
+                      setForm((f: any) => ({
                         ...f,
                         status: e.target.value as "active" | "hidden",
                       }))
@@ -439,21 +399,7 @@ export default function AdminProducts() {
                     type="number"
                     value={form.price || ""}
                     onChange={(e) =>
-                      setForm((f) => ({ ...f, price: +e.target.value }))
-                    }
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">
-                    Số lượng tồn kho
-                  </label>
-                  <input
-                    type="number"
-                    value={form.stock || ""}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, stock: +e.target.value }))
+                      setForm((f: any) => ({ ...f, price: +e.target.value }))
                     }
                     className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
                     placeholder="0"
@@ -473,7 +419,9 @@ export default function AdminProducts() {
                         className="w-full h-full object-cover"
                       />
                       <button
-                        onClick={() => setForm((f) => ({ ...f, image: "" }))}
+                        onClick={() =>
+                          setForm((f: any) => ({ ...f, image: "" }))
+                        }
                         className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs hover:bg-red-600"
                       >
                         X
@@ -508,7 +456,7 @@ export default function AdminProducts() {
                         if (!file) return;
                         try {
                           const result = await adminApi.uploadImage(file);
-                          setForm((f) => ({ ...f, image: result.url }));
+                          setForm((f: any) => ({ ...f, image: result.url }));
                         } catch {
                           alert("Tải ảnh thất bại. Vui lòng thử lại.");
                         }
@@ -524,7 +472,7 @@ export default function AdminProducts() {
                 <textarea
                   value={form.description}
                   onChange={(e) =>
-                    setForm((f) => ({ ...f, description: e.target.value }))
+                    setForm((f: any) => ({ ...f, description: e.target.value }))
                   }
                   rows={3}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 resize-none"

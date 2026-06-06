@@ -143,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(
     async (name: string, phone: string, password: string) => {
-      const data = await authApi.register({ full_name: name, phone, password });
+      const data = await authApi.register({ name, phone, password });
       setTokens(data.access_token, data.refresh_token);
 
       const newProfile: UserProfile = {

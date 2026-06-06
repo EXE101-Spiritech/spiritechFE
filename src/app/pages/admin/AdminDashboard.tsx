@@ -18,7 +18,11 @@ import {
 } from "recharts";
 import { formatCurrency } from "../../data/index";
 import { adminApi } from "@/features/admin/api";
-import type { AdminDashboard, RevenueResponse } from "@/shared/types";
+import type {
+  AdminDashboard,
+  RevenueResponse,
+  RevenueDataPoint,
+} from "@/shared/types";
 
 const MetricCard = ({
   icon: Icon,

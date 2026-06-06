@@ -1,48 +1,100 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
-import { Clock, Calendar, Tag } from 'lucide-react';
-import { guideArticles } from '../data';
-import { productApi } from '@/features/products/api';
+import { useState, useEffect } from "react";
+import { Link } from "react-router";
+import { Clock, Calendar, Tag } from "lucide-react";
+import { productApi } from "@/features/products/api";
 
 export default function Guide() {
   const [apiArticles, setApiArticles] = useState<any[] | null>(null);
 
   useEffect(() => {
-    productApi.listBlogs({ size: 20 }).then(r => setApiArticles(r.data)).catch(() => {});
+    productApi
+      .listBlogs({ size: 20 })
+      .then((r) => setApiArticles(r.data))
+      .catch(() => {});
   }, []);
 
-  const displayArticles = apiArticles && apiArticles.length > 0
-    ? apiArticles.map(a => ({
-        id: a.slug || a.id,
-        title: a.title,
-        excerpt: a.excerpt || '',
-        image: a.image_url || '',
-        category: '',
-        readTime: '5 phút',
-        date: a.created_at ? a.created_at.slice(0, 10) : '',
-        content: '',
-        relatedComboId: null,
-        relatedComboName: null,
-      }))
-    : guideArticles;
+  const displayArticles =
+    apiArticles && apiArticles.length > 0
+      ? apiArticles.map((a) => ({
+          id: a.slug || a.id,
+          title: a.title,
+          excerpt: a.excerpt || "",
+          image: a.image_url || "",
+          category: "",
+          readTime: "5 phút",
+          date: a.created_at ? a.created_at.slice(0, 10) : "",
+          content: "",
+          relatedComboId: null,
+          relatedComboName: null,
+        }))
+      : [];
+
+  if (!displayArticles.length) {
+    return (
+      <div
+        style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}
+        className="min-h-screen bg-[#f8fafc]"
+      >
+        <div className="py-10" style={{ backgroundColor: "#902131" }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav className="text-white/60 text-sm mb-3">
+              <Link to="/" className="hover:text-white">
+                Trang chủ
+              </Link>
+              <span className="mx-2">/</span>
+              <span className="text-white">Thông Tin</span>
+            </nav>
+            <h1
+              style={{
+                fontFamily: "Lora, serif",
+                color: "white",
+                fontSize: "clamp(1.3rem, 3.5vw, 2rem)",
+              }}
+            >
+              Thông Tin & Kiến Thức
+            </h1>
+            <p className="text-white/70 mt-1">
+              Kiến thức thờ cúng theo phong tục truyền thống Việt Nam
+            </p>
+          </div>
+        </div>
+        <div className="text-center py-20 text-gray-400">
+          Chưa có bài viết nào.
+        </div>
+      </div>
+    );
+  }
 
   const featured = displayArticles[0];
   const rest = displayArticles.slice(1);
 
   return (
-    <div style={{ fontFamily: 'Be Vietnam Pro, sans-serif' }} className="min-h-screen bg-[#f8fafc]">
+    <div
+      style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}
+      className="min-h-screen bg-[#f8fafc]"
+    >
       {/* Header */}
-      <div className="py-10" style={{ backgroundColor: '#902131' }}>
+      <div className="py-10" style={{ backgroundColor: "#902131" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="text-white/60 text-sm mb-3">
-            <Link to="/" className="hover:text-white">Trang chủ</Link>
+            <Link to="/" className="hover:text-white">
+              Trang chủ
+            </Link>
             <span className="mx-2">/</span>
             <span className="text-white">Thông Tin</span>
           </nav>
-          <h1 style={{ fontFamily: 'Lora, serif', color: 'white', fontSize: 'clamp(1.3rem, 3.5vw, 2rem)' }}>
+          <h1
+            style={{
+              fontFamily: "Lora, serif",
+              color: "white",
+              fontSize: "clamp(1.3rem, 3.5vw, 2rem)",
+            }}
+          >
             Thông Tin & Kiến Thức
           </h1>
-          <p className="text-white/70 mt-1">Kiến thức thờ cúng theo phong tục truyền thống Việt Nam</p>
+          <p className="text-white/70 mt-1">
+            Kiến thức thờ cúng theo phong tục truyền thống Việt Nam
+          </p>
         </div>
       </div>
 
@@ -64,7 +116,7 @@ export default function Guide() {
               <div className="flex flex-wrap gap-2 mb-3">
                 <span
                   className="text-xs px-2.5 py-1 rounded-full flex items-center gap-1"
-                  style={{ backgroundColor: '#fdf4f3', color: '#cc323f' }}
+                  style={{ backgroundColor: "#fdf4f3", color: "#cc323f" }}
                 >
                   <Tag className="w-3 h-3" /> {featured.category}
                 </span>
@@ -76,28 +128,44 @@ export default function Guide() {
                 </span>
               </div>
               <h2
-                style={{ fontFamily: 'Lora, serif', color: '#0f172a', fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)', lineHeight: 1.3 }}
+                style={{
+                  fontFamily: "Lora, serif",
+                  color: "#0f172a",
+                  fontSize: "clamp(1.1rem, 2.5vw, 1.5rem)",
+                  lineHeight: 1.3,
+                }}
                 className="mb-3 group-hover:text-[#cc323f] transition-colors"
               >
                 {featured.title}
               </h2>
-              <p className="text-gray-500 leading-relaxed">{featured.excerpt}</p>
+              <p className="text-gray-500 leading-relaxed">
+                {featured.excerpt}
+              </p>
             </div>
           </div>
         </Link>
 
         {/* Article grid */}
         <div className="mb-6">
-          <p className="text-sm uppercase tracking-widest mb-1" style={{ color: '#cc323f', fontWeight: 600 }}>
+          <p
+            className="text-sm uppercase tracking-widest mb-1"
+            style={{ color: "#cc323f", fontWeight: 600 }}
+          >
             Tất cả bài viết
           </p>
-          <h2 style={{ fontFamily: 'Lora, serif', color: '#0f172a', fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)' }}>
+          <h2
+            style={{
+              fontFamily: "Lora, serif",
+              color: "#0f172a",
+              fontSize: "clamp(1.1rem, 2.5vw, 1.5rem)",
+            }}
+          >
             Kiến Thức Thờ Cúng
           </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {rest.map(article => (
+          {rest.map((article) => (
             <Link
               key={article.id}
               to={`/guide/${article.id}`}
@@ -111,23 +179,36 @@ export default function Guide() {
                 />
                 <span
                   className="absolute top-3 left-3 text-white text-xs px-2.5 py-1 rounded-full"
-                  style={{ backgroundColor: 'rgba(144,33,49,0.85)' }}
+                  style={{ backgroundColor: "rgba(144,33,49,0.85)" }}
                 >
                   {article.category}
                 </span>
               </div>
               <div className="p-5">
                 <div className="flex gap-3 text-xs text-gray-400 mb-2">
-                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{article.readTime}</span>
-                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{article.date}</span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {article.readTime}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {article.date}
+                  </span>
                 </div>
                 <h3
-                  style={{ fontFamily: 'Lora, serif', color: '#0f172a', fontSize: '1rem', lineHeight: 1.4 }}
+                  style={{
+                    fontFamily: "Lora, serif",
+                    color: "#0f172a",
+                    fontSize: "1rem",
+                    lineHeight: 1.4,
+                  }}
                   className="mb-2 group-hover:text-[#cc323f] transition-colors"
                 >
                   {article.title}
                 </h3>
-                <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">{article.excerpt}</p>
+                <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">
+                  {article.excerpt}
+                </p>
               </div>
             </Link>
           ))}

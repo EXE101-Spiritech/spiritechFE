@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Star } from "lucide-react";
-import { combos, OCCASIONS } from "../data";
+import { formatCurrency } from "../data";
 import { comboApi } from "@/features/combos/api";
 import exampleImage from "figma:asset/e5cf50079f7038348babb7662b17fe84a7e6152f.png";
 
@@ -54,8 +54,9 @@ export default function ComboList() {
         inStock: true,
         usageGuide: "",
       }))
-    : combos;
+    : [];
   const selectedOccasion = searchParams.get("occasion") || "Tất cả";
+  const OCCASIONS: string[] = [];
 
   const filtered = displayCombos
     .filter((c) => {

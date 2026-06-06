@@ -18,9 +18,11 @@ export interface CreateProductReq {
   vat_rate_bps?: number;
   weight_grams?: number;
   images?: string[];
-  category_id?: string;
   attributes?: Record<string, unknown>;
   sku?: string;
+  status?: string;
+  is_combo?: boolean;
+  combo_original_price_vnd?: number;
 }
 
 export interface AddVariantReq {
@@ -39,20 +41,6 @@ export interface Category {
   NameEN?: string;
   Description?: string;
   SortOrder?: number;
-}
-
-export interface ReceiveStockReq {
-  product_id: string;
-  variant_id: string;
-  quantity: number;
-  note?: string;
-}
-
-export interface AdjustStockReq {
-  product_id: string;
-  variant_id: string;
-  delta: number;
-  reason: string;
 }
 
 export interface SetShippingReq {
@@ -113,7 +101,7 @@ export const adminApi = {
       })
       .then((r) => r.data),
 
-  /** Orders grouped by status */
+  /** Orders grouped by status — returns array of {status, count} */
   ordersByStatus: () =>
     axiosClient
       .get<OrdersByStatus>("/admin/analytics/orders-by-status")
@@ -151,16 +139,6 @@ export const adminApi = {
 
   /** Delete category */
   deleteCategory: (id: string) => axiosClient.delete(`/admin/categories/${id}`),
-
-  // ── Inventory ──────────────────────────────────────────────────────────────
-
-  /** Receive stock */
-  receiveStock: (data: ReceiveStockReq) =>
-    axiosClient.post("/admin/inventory/receive", data),
-
-  /** Adjust stock (positive or negative delta) */
-  adjustStock: (data: AdjustStockReq) =>
-    axiosClient.post("/admin/inventory/adjust", data),
 
   // ── Orders (Admin) ─────────────────────────────────────────────────────────
 

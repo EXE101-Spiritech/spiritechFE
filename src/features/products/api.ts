@@ -48,4 +48,4 @@ export const productApi = {
     axiosClient.get<BlogDetail>(`/v1/blogs/${slug}`).then((r) => r.data),
 };
 
-export type { ProductListItem, VariantItem } from "@/shared/types";
+export type { ProductListItem } from "@/shared/types";

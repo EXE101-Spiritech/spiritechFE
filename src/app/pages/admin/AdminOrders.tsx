@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Search, X, ChevronDown } from "lucide-react";
-import { adminOrders } from "../../data/adminData";
-import type { AdminOrder } from "../../data/adminData";
 import { formatCurrency } from "../../data/index";
 import { adminApi } from "@/features/admin/api";
 
@@ -42,12 +40,12 @@ const Badge = ({
 };
 
 export default function AdminOrders() {
-  const [orders, setOrders] = useState<AdminOrder[]>(adminOrders);
+  const [orders, setOrders] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
-  const filtered = orders.filter((o) => {
+  const filtered = orders.filter((o: any) => {
     const matchSearch =
       o.id.toLowerCase().includes(search.toLowerCase()) ||
       o.customer.toLowerCase().includes(search.toLowerCase());
@@ -61,12 +59,14 @@ export default function AdminOrders() {
     status: "pending" | "paid" | "completed",
   ) => {
     // Call admin API to advance status
-    try { adminApi.advanceOrderStatus(id).catch(() => {}); } catch {}
-    setOrders((os) =>
-      os.map((o) => (o.id === id ? { ...o, orderStatus: status } : o)),
+    try {
+      adminApi.advanceOrderStatus(id).catch(() => {});
+    } catch {}
+    setOrders((os: any[]) =>
+      os.map((o: any) => (o.id === id ? { ...o, orderStatus: status } : o)),
     );
     if (selectedOrder?.id === id)
-      setSelectedOrder((o) => (o ? { ...o, orderStatus: status } : null));
+      setSelectedOrder((o: any) => (o ? { ...o, orderStatus: status } : null));
   };
 
   const totalRevenue = orders
@@ -299,7 +299,7 @@ export default function AdminOrders() {
                   Sản phẩm đặt hàng
                 </p>
                 <div className="space-y-2">
-                  {selectedOrder.items.map((item, i) => (
+                  {selectedOrder.items.map((item: any, i: number) => (
                     <div
                       key={i}
                       className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"

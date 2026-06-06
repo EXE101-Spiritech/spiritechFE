@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router';
-import { ChevronRight, Package, ArrowLeft } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { mockOrders, formatCurrency, getStatusLabel, getStatusColor, Order } from '../data';
+import { useState, useEffect } from "react";
+import { Link, Navigate, useNavigate } from "react-router";
+import { ChevronRight, Package, ArrowLeft } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { formatCurrency, getStatusLabel, getStatusColor, Order } from "../data";
 import { orderApi } from "@/features/orders/api";
 
 function loadUserOrders(): Order[] {
   try {
-    const raw = localStorage.getItem('userOrders');
+    const raw = localStorage.getItem("userOrders");
     if (!raw) return [];
     return JSON.parse(raw) as Order[];
   } catch {
@@ -19,17 +19,23 @@ export default function OrderHistory() {
   const { isLoggedIn } = useAuth();
   const [userOrders] = useState<Order[]>(loadUserOrders);
 
-  if (!isLoggedIn) return <Navigate to="/login?redirect=/account/orders" replace />;
+  if (!isLoggedIn)
+    return <Navigate to="/login?redirect=/account/orders" replace />;
 
   // Gộp đơn từ localStorage (mới nhất trước) + mockOrders
-  const allOrders = [...userOrders, ...mockOrders];
+  const allOrders = [...userOrders];
 
   return (
-    <div style={{ fontFamily: 'Be Vietnam Pro, sans-serif' }} className="min-h-screen bg-[#f8fafc]">
-      <div className="py-10" style={{ backgroundColor: '#902131' }}>
+    <div
+      style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}
+      className="min-h-screen bg-[#f8fafc]"
+    >
+      <div className="py-10" style={{ backgroundColor: "#902131" }}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="text-white/60 text-sm mb-3">
-            <Link to="/account" className="hover:text-white">Tài khoản</Link>
+            <Link to="/account" className="hover:text-white">
+              Tài khoản
+            </Link>
             <span className="mx-2">/</span>
             <span className="text-white">Đơn hàng của tôi</span>
           </nav>
@@ -37,11 +43,19 @@ export default function OrderHistory() {
             <Link
               to="/account"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors hover:bg-white/20 flex-shrink-0"
-              style={{ color: 'white', fontWeight: 600 }}
+              style={{ color: "white", fontWeight: 600 }}
             >
               <ArrowLeft className="w-5 h-5" /> Quay lại
             </Link>
-            <h1 style={{ fontFamily: 'Lora, serif', color: 'white', fontSize: 'clamp(1.3rem, 3.5vw, 2rem)' }}>Đơn Hàng Của Tôi</h1>
+            <h1
+              style={{
+                fontFamily: "Lora, serif",
+                color: "white",
+                fontSize: "clamp(1.3rem, 3.5vw, 2rem)",
+              }}
+            >
+              Đơn Hàng Của Tôi
+            </h1>
           </div>
           {userOrders.length > 0 && (
             <p className="text-white/60 text-sm mt-1">
@@ -56,7 +70,13 @@ export default function OrderHistory() {
           <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
             <Package className="w-16 h-16 text-gray-200 mx-auto mb-4" />
             <p className="text-gray-500 text-lg mb-2">Chưa có đơn hàng nào</p>
-            <Link to="/combo" className="text-sm hover:underline" style={{ color: '#cc323f' }}>Mua ngay →</Link>
+            <Link
+              to="/combo"
+              className="text-sm hover:underline"
+              style={{ color: "#cc323f" }}
+            >
+              Mua ngay →
+            </Link>
           </div>
         ) : (
           <div className="space-y-4">
@@ -67,13 +87,21 @@ export default function OrderHistory() {
                   key={`${order.id}-${idx}`}
                   to={`/account/orders/${order.id}`}
                   className="block bg-white rounded-2xl shadow-sm hover:shadow-md transition-all p-5"
-                  style={isNew ? { border: '2px solid rgba(204,50,63,0.25)' } : undefined}
+                  style={
+                    isNew
+                      ? { border: "2px solid rgba(204,50,63,0.25)" }
+                      : undefined
+                  }
                 >
                   {isNew && (
                     <div className="flex items-center gap-1.5 mb-3">
                       <span
                         className="text-xs px-2.5 py-0.5 rounded-full"
-                        style={{ backgroundColor: '#fdf4f3', color: '#cc323f', fontWeight: 700 }}
+                        style={{
+                          backgroundColor: "#fdf4f3",
+                          color: "#cc323f",
+                          fontWeight: 700,
+                        }}
                       >
                         ✦ Đơn hàng mới
                       </span>
@@ -82,8 +110,12 @@ export default function OrderHistory() {
 
                   <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                     <div>
-                      <p className="text-gray-500 text-xs mb-0.5">Mã đơn hàng</p>
-                      <p style={{ color: '#cc323f', fontWeight: 700 }}>#{order.id}</p>
+                      <p className="text-gray-500 text-xs mb-0.5">
+                        Mã đơn hàng
+                      </p>
+                      <p style={{ color: "#cc323f", fontWeight: 700 }}>
+                        #{order.id}
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-gray-500 text-xs mb-0.5">Ngày đặt</p>
@@ -98,7 +130,7 @@ export default function OrderHistory() {
                   </div>
 
                   <div className="flex gap-3 mb-4">
-                    {order.items.slice(0, 3).map(item => (
+                    {order.items.slice(0, 3).map((item) => (
                       <img
                         key={item.id}
                         src={item.image}
@@ -108,15 +140,22 @@ export default function OrderHistory() {
                     ))}
                     {order.items.length > 3 && (
                       <div className="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <span className="text-gray-500 text-xs">+{order.items.length - 3}</span>
+                        <span className="text-gray-500 text-xs">
+                          +{order.items.length - 3}
+                        </span>
                       </div>
                     )}
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-gray-500 text-xs">{order.items.length} sản phẩm</p>
-                      <p className="text-lg" style={{ color: '#cc323f', fontWeight: 700 }}>
+                      <p className="text-gray-500 text-xs">
+                        {order.items.length} sản phẩm
+                      </p>
+                      <p
+                        className="text-lg"
+                        style={{ color: "#cc323f", fontWeight: 700 }}
+                      >
                         {formatCurrency(order.total)}
                       </p>
                     </div>

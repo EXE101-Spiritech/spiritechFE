@@ -18,12 +18,24 @@ import {
   User,
   Mail,
   Phone,
+  X,
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../data";
 import { checkoutApi } from "@/features/checkout/api";
-import { orderApi } from "@/features/orders/api";
+import { couponApi } from "@/features/coupons/api";
+import type { CouponInfo } from "@/shared/types";
+import { API_BASE } from "@/shared/api/axiosClient";
+
+// ── Event tracking ─────────────────────────────────────────────────────────────
+function track(eventType: string, payload: Record<string, any> = {}) {
+  fetch(`${API_BASE}/v1/track`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ event_type: eventType, payload }),
+  }).catch(() => {});
+}
 
 // ─── VietQR Component ─────────────────────────────────────────────────────────
 function VietQR({ amount, info }: { amount: number; info: string }) {
@@ -423,7 +435,7 @@ interface FormErrors {
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function Checkout() {
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, totalPrice, clearCart, cartId, version } = useCart();
   const { profile } = useAuth();
   const navigate = useNavigate();
 
@@ -449,6 +461,27 @@ export default function Checkout() {
   });
   const [selectedMethod, setSelectedMethod] = useState<string>("standard");
   const [payment, setPayment] = useState<"cod" | "bank">("cod");
+
+  // Track user entered checkout
+  useEffect(() => {
+    if (cartId) {
+      track("checkout.step_cart", { cart_id: cartId });
+    }
+  }, []);
+
+  // Track page exit with cart items
+  useEffect(() => {
+    if (items.length === 0) return;
+    const handleExit = () => {
+      track("page.exited", {
+        cart_id: cartId,
+        item_count: items.length,
+      });
+    };
+    window.addEventListener("beforeunload", handleExit, { capture: true });
+    return () =>
+      window.removeEventListener("beforeunload", handleExit, { capture: true });
+  }, [items.length, cartId]);
   const [errors, setErrors] = useState<FormErrors>({});
 
   const [copied, setCopied] = useState<string | null>(null);
@@ -456,6 +489,39 @@ export default function Checkout() {
   const [successOverlay, setSuccessOverlay] = useState<{
     orderId: string;
   } | null>(null);
+
+  // ── Coupon ───────────────────────────────────────────────────────────────────
+  const [couponCode, setCouponCode] = useState("");
+  const [couponInfo, setCouponInfo] = useState<CouponInfo | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const discountVnd = couponInfo
+    ? couponInfo.discount_type === "percent"
+      ? Math.round((totalPrice * couponInfo.discount_value) / 10000)
+      : Math.min(couponInfo.discount_value, totalPrice)
+    : 0;
+
+  const handleLookupCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponError("");
+    try {
+      const info = await couponApi.lookup(couponCode.trim().toUpperCase());
+      if (info.status !== "active") {
+        setCouponError("Mã giảm giá đã hết hạn hoặc không khả dụng");
+        setCouponInfo(null);
+      } else if (info.min_order_vnd > totalPrice) {
+        setCouponError(`Đơn tối thiểu ${formatCurrency(info.min_order_vnd)}`);
+        setCouponInfo(null);
+      } else {
+        setCouponInfo(info);
+      }
+    } catch {
+      setCouponError("Mã giảm giá không hợp lệ");
+      setCouponInfo(null);
+    }
+    setCouponLoading(false);
+  };
 
   // ── Guest checkout (non-logged-in) ──────────────────────────────────────────
   const [guestForm, setGuestForm] = useState({
@@ -500,7 +566,7 @@ export default function Checkout() {
   };
 
   const shippingFee = form.province ? getShippingFee(selectedMethod) : 0;
-  const grandTotal = totalPrice + shippingFee;
+  const grandTotal = totalPrice + shippingFee - discountVnd;
 
   // ─── Validation ──────────────────────────────────────────────────────────────
   const validateStep0 = (): boolean => {
@@ -571,10 +637,7 @@ export default function Checkout() {
     }
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1400));
-    clearCart();
-    setLoading(false);
-    const orderId = "DH" + Date.now().toString().slice(-6);
+
     const fullAddress = [
       form.address,
       form.ward,
@@ -584,54 +647,88 @@ export default function Checkout() {
       .filter(Boolean)
       .join(", ");
 
-    // Lưu vào localStorage để hiển thị trong "Đơn hàng của tôi"
-    const now = new Date();
-    const dateStr = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
-    const eta = new Date(now);
-    if (selectedMethod === "sameday") eta.setHours(eta.getHours() + 4);
-    else eta.setDate(eta.getDate() + (selectedMethod === "express" ? 2 : 5));
-    const etaStr =
-      selectedMethod === "sameday"
-        ? `Hôm nay trước ${String(eta.getHours()).padStart(2, "0")}:00`
-        : `${String(eta.getDate()).padStart(2, "0")}/${String(eta.getMonth() + 1).padStart(2, "0")}/${eta.getFullYear()}`;
     try {
-      const existing = JSON.parse(localStorage.getItem("userOrders") || "[]");
-      localStorage.setItem(
-        "userOrders",
-        JSON.stringify([
-          {
-            id: orderId,
-            date: dateStr,
-            status: "processing",
-            items,
-            total: grandTotal,
-            shippingInfo: {
-              name: form.name,
-              phone: form.phone,
-              address: fullAddress,
-              notes: form.notes || "",
-            },
-            paymentMethod: payment,
-            estimatedDelivery: etaStr,
-          },
-          ...existing,
-        ]),
-      );
-    } catch {
-      /* ignore */
-    }
+      track("checkout.step_payment", {
+        cart_id: cartId,
+        payment_method: payment,
+      });
 
-    navigate("/order-success", {
-      state: {
-        orderId,
-        shippingInfo: { ...form, address: fullAddress },
-        paymentMethod: payment,
-        total: grandTotal,
-        shippingMethod: selectedMethod,
-        shippingFee,
-        items,
-      },
-    });
+      const orderData = await checkoutApi.placeOrder(
+        {
+          cart_id: cartId || "",
+          cart_version: version,
+          payment_method: payment === "bank" ? "payos" : "cod",
+          shipping_vnd: shippingFee,
+          shipping_address: {
+            street: fullAddress,
+            city: selectedProvince?.name || "",
+            district: form.district,
+          },
+          buyer: {
+            name: form.name,
+            phone: form.phone,
+            email: profile?.email || "",
+            address: fullAddress,
+          },
+          coupon_code: couponInfo?.code || undefined,
+          note: form.notes || undefined,
+        },
+        crypto.randomUUID(),
+      );
+
+      clearCart();
+      setLoading(false);
+
+      // Lưu vào localStorage
+      try {
+        const existing = JSON.parse(localStorage.getItem("userOrders") || "[]");
+        localStorage.setItem(
+          "userOrders",
+          JSON.stringify([
+            {
+              id: orderData.order_id,
+              orderNumber: orderData.order_number,
+              date: new Date().toLocaleDateString("vi-VN"),
+              status: orderData.status,
+              items,
+              total: orderData.total_vnd,
+              shippingInfo: {
+                name: form.name,
+                phone: form.phone,
+                address: fullAddress,
+                notes: form.notes || "",
+              },
+              paymentMethod: payment,
+            },
+            ...existing,
+          ]),
+        );
+      } catch {
+        /* ignore */
+      }
+
+      // Nếu thanh toán ngân hàng, redirect
+      if (orderData.payment_redirect) {
+        window.location.href = orderData.payment_redirect;
+      } else {
+        navigate("/order-success", {
+          state: {
+            orderId: orderData.order_id,
+            shippingInfo: { ...form, address: fullAddress },
+            paymentMethod: payment,
+            total: orderData.total_vnd,
+            shippingMethod: selectedMethod,
+            shippingFee,
+            items,
+          },
+        });
+      }
+    } catch (err: any) {
+      setLoading(false);
+      const msg =
+        err?.response?.data?.message || "Đặt hàng thất bại. Vui lòng thử lại.";
+      alert(msg);
+    }
   };
 
   // ─── Guest checkout handlers ───────────────────────────────────────────────
@@ -1493,6 +1590,53 @@ export default function Checkout() {
           </span>
         </div>
       </div>
+
+      {/* Coupon */}
+      <div className="mt-3 pt-3 border-t border-gray-100">
+        {couponInfo ? (
+          <div className="flex items-center justify-between bg-green-50 rounded-lg px-3 py-2 mb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-green-700 text-sm font-medium">
+                {couponInfo.code}
+              </span>
+              <button
+                onClick={() => {
+                  setCouponInfo(null);
+                  setCouponCode("");
+                }}
+                className="text-gray-400 hover:text-red-500"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <span className="text-green-700 text-sm font-semibold">
+              -{formatCurrency(discountVnd)}
+            </span>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+              placeholder="Mã giảm giá"
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-red-200"
+              onKeyDown={(e) => e.key === "Enter" && handleLookupCoupon()}
+            />
+            <button
+              onClick={handleLookupCoupon}
+              disabled={couponLoading}
+              className="px-3 py-2 rounded-lg text-xs font-medium text-white disabled:opacity-60"
+              style={{ background: "#cc323f" }}
+            >
+              {couponLoading ? "..." : "Áp dụng"}
+            </button>
+          </div>
+        )}
+        {couponError && (
+          <p className="text-xs text-red-500 mt-1">{couponError}</p>
+        )}
+      </div>
+
       <div className="border-t border-gray-100 mt-3 pt-4 flex justify-between">
         <span style={{ fontWeight: 700, color: "#0f172a" }}>Tổng cộng</span>
         <span

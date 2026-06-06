@@ -1,10 +1,15 @@
-import axiosClient from '@/shared/api/axiosClient';
-import type { CreateCartReq, CartResponse, AddItemReq, AddItemResponse } from '@/shared/types';
+import axiosClient from "@/shared/api/axiosClient";
+import type {
+  CreateCartReq,
+  CartResponse,
+  AddItemReq,
+  AddItemResponse,
+} from "@/shared/types";
 
 export const cartApi = {
   /** Create a new cart */
   create: (data?: CreateCartReq) =>
-    axiosClient.post<CartResponse>('/v1/cart', data ?? {}).then((r) => r.data),
+    axiosClient.post<CartResponse>("/v1/cart", data ?? {}).then((r) => r.data),
 
   /** Get cart by ID */
   get: (id: string) =>
@@ -17,6 +22,6 @@ export const cartApi = {
       .then((r) => r.data),
 
   /** Remove item from cart */
-  removeItem: (cartId: string, variantId: string) =>
-    axiosClient.delete(`/v1/cart/${cartId}/items/${variantId}`),
+  removeItem: (cartId: string, productId: string) =>
+    axiosClient.delete(`/v1/cart/${cartId}/items/${productId}`),
 };

@@ -34,7 +34,7 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIs...
 - [5. Orders & Status Machine](#5-orders--status-machine)
 - [6. Coupons](#6-coupons)
 - [7. Payments (PayOS)](#7-payments-payos)
-- [8. Event Combos](#8-event-combos)
+- [8. User Event Tracking](#8-user-event-tracking)
 - [9. AI Chat Service](#9-ai-chat-service)
   - [9.1 SSE Streaming](#91-sse-streaming)
   - [9.2 Event Types](#92-event-types)
@@ -118,7 +118,21 @@ Content-Type: application/json
 
 **Important:** Refresh tokens are one-time use. Each refresh rotates both tokens. If a stolen token is replayed after legitimate use, both the stolen and legitimate sessions are revoked (theft detection).
 
-### 1.4 Store Tokens
+### 1.4 OTP Flow (Secondary) 🔓 Public
+
+**Request OTP:**
+```http
+POST /v1/auth/otp/request
+{"phone": "0941237430"}
+```
+
+**Verify OTP:**
+```http
+POST /v1/auth/otp/verify
+{"phone": "0941237430", "code": "123456"}
+```
+
+### 1.5 Store Tokens
 
 ```typescript
 // TypeScript — store on login
@@ -149,7 +163,7 @@ async function refreshToken() {
 }
 ```
 
-### 1.5 Logout 🔑 Auth
+### 1.6 Logout 🔑 Auth
 
 ```http
 POST /v1/logout
@@ -163,7 +177,7 @@ Content-Type: application/json
 
 **Response 204:** No content. Session revoked.
 
-### 1.6 List Sessions 🔑 Auth
+### 1.7 List Sessions 🔑 Auth
 
 ```http
 GET /v1/sessions
@@ -193,7 +207,7 @@ Authorization: Bearer <token>
 GET /v1/products?limit=20&cursor=
 ```
 
-**Response 200:**
+**Response 200: (cursor-based pagination)**
 ```json
 {
   "data": [
@@ -203,7 +217,6 @@ GET /v1/products?limit=20&cursor=
       "name": "Bàn Thờ Gỗ Hương Tăm 1m2",
       "name_en": "Altar Table — Rosewood 1.2m",
       "base_price_vnd": 8500000,
-      "vat_rate_bps": 1000,
       "images": ["https://example.com/img/ban-tho-1.jpg"],
       "status": "active",
       "created_at": "2026-05-27T16:30:56.155927Z"
@@ -227,23 +240,68 @@ GET /v1/products/ban-tho-go-huong-tam-gia-1m2
   "name": "Bàn Thờ Gỗ Hương Tăm 1m2",
   "description": "...",
   "base_price_vnd": 8500000,
-  "vat_rate_bps": 1000,
   "images": ["..."],
   "status": "active",
   "version": 1,
-  "variants": [
-    {
-      "id": "v0000000-...",
-      "sku": "SP-BT-001",
-      "name": "Mặc định",
-      "price_vnd": 8500000,
-      "status": "active"
-    }
-  ]
+  "is_combo": false
 }
 ```
 
-> **Note:** Products without variants auto-get a `"Mặc định"` variant.
+> Products have a single price — no variants.
+> See [Admin Product API](./docs/api/admin-product.md) for full admin reference.
+
+### 2.2.1 Combo Products
+
+A combo is a regular product with `is_combo: true`. No separate table or API exists.
+
+**Creating a combo via admin API:**
+```js
+// POST /admin/products  (requires admin JWT)
+const body = {
+  slug: "combo-tet-2027",
+  name: "Combo Tết Đinh Mùi 2027",
+  description: "Trọn bộ bàn thờ và đồ thờ cúng cho dịp Tết.",
+  base_price_vnd: 5000000,   // combo price after discount
+  images: ["https://.../banner.jpg"],
+  is_combo: true,
+  combo_original_price_vnd: 6500000  // original undiscounted total
+};
+```
+
+**Updating a combo (⚠️ full replace — send all fields):**
+```js
+// First get current product, then overlay changes
+const current = await fetch(`/v1/products/${slug}`).then(r => r.json());
+
+// PUT /admin/products/:id
+const body = {
+  ...current,
+  name: "Combo Tết 2027 - Updated",
+  base_price_vnd: 4500000
+};
+```
+
+**Frontend display logic:**
+```js
+function renderPrice(product) {
+  if (product.is_combo && product.combo_original_price_vnd) {
+    return `
+      <span style="text-decoration: line-through; color: #999;">
+        ${formatPrice(product.combo_original_price_vnd)}
+      </span>
+      <span style="color: red; font-weight: bold; margin-left: 8px;">
+        ${formatPrice(product.base_price_vnd)}
+      </span>
+    `;
+  }
+  return `<span>${formatPrice(product.base_price_vnd)}</span>`;
+}
+```
+
+Combos appear in all product endpoints — no special endpoints needed:
+- `GET /v1/products` — listed alongside regular products with `is_combo: true`
+- `GET /v1/products/:slug` — returns `combo_original_price_vnd`
+- `GET /v1/search/products` — searchable by name/description
 
 ### 2.3 Search Products 🔓 Public
 
@@ -257,11 +315,11 @@ GET /v1/search/products?q=bàn thờ&category=ban-tho&page=1&size=10
   "data": [
     {
       "id": "...",
-      "sku": "SP-BT-001",
       "slug": "ban-tho-go-huong-tam-gia-1m2",
       "name": "Bàn Thờ Gỗ Hương Tăm 1m2",
       "base_price_vnd": 8500000,
       "category_slug": "ban-tho",
+      "category_name": "Bàn thờ",
       "image_url": "https://...",
       "in_stock": true,
       "_score": 0.85
@@ -325,7 +383,7 @@ Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "variant_id": "v0000000-...",
+  "product_id": "b0000000-...",
   "quantity": 1
 }
 ```
@@ -334,7 +392,7 @@ Content-Type: application/json
 ```json
 {
   "cart_id": "c0000000-...",
-  "variant_id": "v0000000-...",
+  "product_id": "b0000000-...",
   "quantity": 1
 }
 ```
@@ -342,7 +400,7 @@ Content-Type: application/json
 ### 3.4 Remove Item 🔑 Auth
 
 ```http
-DELETE /v1/cart/{id}/items/{variant_id}
+DELETE /v1/cart/{id}/items/{product_id}
 Authorization: Bearer <token>
 ```
 
@@ -373,18 +431,13 @@ Content-Type: application/json
 {
   "cart_id": "c0000000-...",
   "cart_version": 3,
-  "warehouse_id": "d0000000-0000-0000-0000-000000000001",
   "payment_method": "payos",
-  "shipping_vnd": 50000,
+  "shipping_vnd": 0,
   "shipping_address": {
-    "name": "Nguyễn Văn A",
-    "phone": "0941237430",
     "street": "123 Nguyễn Huệ",
     "city": "Hồ Chí Minh",
-    "province": "Hồ Chí Minh",
-    "country": "VN"
+    "district": "1"
   },
-  "billing_address": { ... },
   "buyer": {
     "name": "Nguyễn Văn A",
     "tax_code": "",
@@ -393,8 +446,7 @@ Content-Type: application/json
     "address": "123 Nguyễn Huệ, Q1, HCM"
   },
   "coupon_code": "TET2027",
-  "note": "Giao giờ hành chính",
-  "reservation_ttl_seconds": 900
+  "note": "Giao giờ hành chính"
 }
 ```
 
@@ -405,11 +457,11 @@ Content-Type: application/json
   "order_number": "SP-250715-00001",
   "status": "pending_payment",
   "invoice_status": "queued",
-  "subtotal_vnd": 8500000,
+  "subtotal_vnd": 7650000,
   "discount_vnd": 850000,
-  "vat_vnd": 850000,
-  "shipping_vnd": 50000,
-  "total_vnd": 8550000,
+  "vat_vnd": 0,
+  "shipping_vnd": 0,
+  "total_vnd": 7650000,
   "payment_ref": "payos_123456",
   "payment_redirect": "https://pay.payos.vn/...",
   "placed_at": "2025-07-15T08:30:00Z"
@@ -420,9 +472,9 @@ Content-Type: application/json
 
 | Rule | Detail |
 |---|---|
-| **Idempotency-Key** | Required header. Prevents double-charge on retry. Generate UUID v4 per attempt. |
-| **Cart Version** | Must match current server version. If mismatch, re-fetch cart and retry. |
-| **Reservation TTL** | Stock reserved for 15min (default). After expiry, items released. |
+| **Idempotency-Key** | Required header. Prevents double-charge on retry. |
+| **Cart Version** | Must match current server version. |
+| **Shipping** | **Free.** Overridden to 0 server-side. |
 | **Coupon** | Applied atomically during checkout. Uses counter decremented. |
 | **Payment Redirect** | For PayOS, redirect user to `payment_redirect` URL immediately. |
 
@@ -432,17 +484,26 @@ Content-Type: application/json
 // Handle checkout errors
 if (res.status === 409) {
   // ERR_CART_STALE — cart_version mismatch
-  // Re-fetch cart and let user review
   const cart = await fetchCart();
   showCartChanges(cart);
 }
 
 if (res.status === 422) {
   // ERR_OUT_OF_STOCK or ERR_COUPON_EXHAUSTED
-  // Show specific error to user
   const err = await res.json();
   showError(err.message);
 }
+```
+
+---
+
+## Price Calculation
+
+```
+Gross per line = unit_price × quantity
+Discount       = proportional allocation (coupon: % or fixed)
+Net per line   = Gross - Discount
+Total          = SUM(Net)   (VAT and shipping = 0)
 ```
 
 ---
@@ -463,11 +524,11 @@ Authorization: Bearer <token>
   "order_number": "SP-250715-00001",
   "status": "shipped",
   "invoice_status": "issued",
-  "subtotal_vnd": 8500000,
+  "subtotal_vnd": 7650000,
   "discount_vnd": 850000,
-  "vat_vnd": 850000,
-  "shipping_vnd": 50000,
-  "total_vnd": 8550000,
+  "vat_vnd": 0,
+  "shipping_vnd": 0,
+  "total_vnd": 7650000,
   "placed_at": "2025-07-15T08:30:00Z",
   "paid_at": "2025-07-15T08:32:00Z",
   "shipped_at": "2025-07-16T09:00:00Z",
@@ -516,8 +577,7 @@ Authorization: Bearer <token>
 ```json
 {
   "order_id": "o0000000-...",
-  "status": "cancelled",
-  "reservations_released": 1
+  "status": "cancelled"
 }
 ```
 
@@ -600,61 +660,9 @@ const pollInterval = setInterval(async () => {
 
 ---
 
-## 8. Event Combos
-
-### 8.1 List Combos 🔓 Public
-
-```http
-GET /v1/combos
-```
-
-**Response 200:**
-```json
-[
-  {
-    "slug": "tet-2027",
-    "name": "Combo Tết Đinh Mùi 2027",
-    "description": "Trọn bộ bàn thờ và đồ thờ cúng cho dịp Tết.",
-    "banner_url": "https://.../tet-2027.jpg",
-    "starts_at": "2026-11-30T17:00:00Z",
-    "expires_at": "2027-02-15T16:59:59Z",
-    "product_count": 3
-  }
-]
-```
-
-### 8.2 Get Combo Detail 🔓 Public
-
-```http
-GET /v1/combos/tet-2027
-```
-
-**Response 200:**
-```json
-{
-  "slug": "tet-2027",
-  "name": "Combo Tết Đinh Mùi 2027",
-  "products": [
-    {
-      "sku": "SP-BT-001",
-      "slug": "ban-tho-go-huong-tam-gia-1m2",
-      "name": "Bàn Thờ Gỗ Hương Tăm 1m2",
-      "image_url": "https://.../ban-tho-1.jpg",
-      "base_price_vnd": 8500000,
-      "combo_price_vnd": 7650000,
-      "discount_bps": 1000,
-      "in_stock": true
-    }
-  ],
-  "total_original_vnd": 36000000,
-  "total_combo_vnd": 31300000,
-  "savings_vnd": 4700000
-}
-```
-
 ---
 
-## 8b. User Event Tracking 🔓 Public
+## 8. User Event Tracking 🔓 Public
 
 Fire-and-forget endpoint for frontend telemetry. No auth required, returns 202 immediately.
 
@@ -1084,24 +1092,6 @@ Authorization: Bearer <token> (optional)
 }
 ```
 
-### GET /v1/chat/sessions/{id}/messages 🔓 Public
-
-Fetch all past messages for a session — restores chat history on page reload.
-
-```http
-GET https://spiritest.duckdns.org/chat/v1/chat/sessions/{id}/messages
-```
-
-**Response 200:**
-```json
-[
-  {"role": "user", "content": "có bán bàn thờ không?"},
-  {"role": "assistant", "content": "Dạ có bạn ơi!..."}
-]
-```
-
----
-
 ### 9.6 Important AI Notes
 
 | Note | Detail |
@@ -1117,11 +1107,6 @@ GET https://spiritest.duckdns.org/chat/v1/chat/sessions/{id}/messages
 ## 10. Admin Analytics
 
 All admin endpoints require JWT with `admin` or `staff` role.
-
-Revenue counted from `payments` with `status = 'captured'` only.
-Cancelled, failed, and refunded payments are excluded.
-
-**Pending orders** = orders with status `paid`, `confirmed`, or `fulfilling`.
 
 ### 10.1 Dashboard 🔒 Admin
 

@@ -7,7 +7,6 @@ export interface Product {
   name: string;
   name_en: string;
   base_price_vnd: number;
-  vat_rate_bps: number;
   status: string;
   created_at: string;
 }

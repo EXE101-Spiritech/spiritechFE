@@ -2,13 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useParams, Navigate } from "react-router";
 import { ArrowLeft, Truck, Banknote, Package } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import {
-  mockOrders,
-  formatCurrency,
-  getStatusLabel,
-  getStatusColor,
-  Order,
-} from "../data";
+import { formatCurrency, getStatusLabel, getStatusColor, Order } from "../data";
 import { orderApi } from "@/features/orders/api";
 
 function loadUserOrders(): Order[] {
@@ -28,7 +22,7 @@ export default function OrderDetail() {
     return <Navigate to="/login?redirect=/account/orders" replace />;
 
   const userOrders = loadUserOrders();
-  const order = [...userOrders, ...mockOrders].find((o) => o.id === id);
+  const order = [...userOrders].find((o) => o.id === id);
 
   if (!order) {
     return (

@@ -21,7 +21,7 @@ export interface LoginReq {
 export interface RegisterReq {
   phone: string;
   password: string;
-  full_name: string;
+  name: string;
 }
 
 export interface RefreshReq {
@@ -69,18 +69,9 @@ export interface ProductListItem {
   name: string;
   name_en: string;
   base_price_vnd: number;
-  vat_rate_bps: number;
   images: string[];
   status: string;
   created_at: string;
-}
-
-export interface VariantItem {
-  id: string;
-  sku: string;
-  name: string;
-  price_vnd: number;
-  status: string;
 }
 
 export interface ProductDetail {
@@ -89,20 +80,20 @@ export interface ProductDetail {
   name: string;
   description: string;
   base_price_vnd: number;
-  vat_rate_bps: number;
   images: string[];
   status: string;
   version: number;
-  variants: VariantItem[];
+  is_combo: boolean;
+  combo_original_price_vnd?: number;
 }
 
 export interface SearchResultItem {
   id: string;
-  sku: string;
   slug: string;
   name: string;
   base_price_vnd: number;
   category_slug: string;
+  category_name: string;
   image_url: string;
   in_stock: boolean;
   _score: number;
@@ -164,7 +155,7 @@ export interface BlogListResponse {
 
 // ── Cart ───────────────────────────────────────────────────────────────────
 export interface CreateCartReq {
-  // empty body
+  session_token?: string;
 }
 
 export interface CartResponse {
@@ -176,13 +167,13 @@ export interface CartResponse {
 }
 
 export interface AddItemReq {
-  variant_id: string;
+  product_id: string;
   quantity: number;
 }
 
 export interface AddItemResponse {
   cart_id: string;
-  variant_id: string;
+  product_id: string;
   quantity: number;
 }
 
@@ -204,15 +195,12 @@ export interface BuyerInfo {
 export interface PlaceOrderReq {
   cart_id: string;
   cart_version: number;
-  warehouse_id: string;
   payment_method: string;
   shipping_vnd: number;
   shipping_address: ShippingAddress;
-  billing_address?: ShippingAddress;
   buyer: BuyerInfo;
   coupon_code?: string;
   note?: string;
-  reservation_ttl_seconds?: number;
 }
 
 export interface PlaceOrderResponse {
@@ -361,6 +349,8 @@ export interface RevenueDataPoint {
   orders: number;
 }
 
+// Revenue over time — returns total + daily breakdown
+// When no data, returns { total_vnd: 0, by_date: [] }
 export interface RevenueResponse {
   total_vnd: number;
   by_date: RevenueDataPoint[];
@@ -374,6 +364,7 @@ export interface TopProductItem {
   revenue_vnd: number;
 }
 
+// Orders grouped by status — flat object with counts per status
 export interface OrdersByStatus {
   pending_payment: number;
   paid: number;
@@ -430,7 +421,7 @@ export interface AIUsage {
     output_tokens: number;
     total_cost_cents: number;
   };
-  tools: { tool_name: string; count: number; failures: number }[];
+  tools: { tool_name: string; count: number; failures: number }[] | null;
 }
 
 // ── Error ──────────────────────────────────────────────────────────────────

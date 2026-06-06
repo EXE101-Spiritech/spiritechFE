@@ -8,7 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { products, formatCurrency } from "../data";
+import { formatCurrency } from "../data";
 import { productApi } from "@/features/products/api";
 import { useCart } from "../context/CartContext";
 import { QuickCheckoutModal } from "../components/QuickCheckoutModal";
@@ -31,13 +31,26 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (id) {
-      productApi.get(id).then(setApiProduct).catch(() => setApiProduct(null)).finally(() => setApiDone(true));
+      productApi
+        .get(id)
+        .then(setApiProduct)
+        .catch(() => setApiProduct(null))
+        .finally(() => setApiDone(true));
     }
   }, [id]);
 
-  const mockMatch = products.find((p) => p.id === id);
+  const mockMatch = undefined;
   const product = apiProduct
-    ? { ...apiProduct, price: apiProduct.base_price_vnd, image: apiProduct.images?.[0] || '', rating: 4.5, reviews: 0, badge: undefined, inStock: apiProduct.status === 'active', category: '' }
+    ? {
+        ...apiProduct,
+        price: apiProduct.base_price_vnd,
+        image: apiProduct.images?.[0] || "",
+        rating: 4.5,
+        reviews: 0,
+        badge: undefined,
+        inStock: apiProduct.status === "active",
+        category: "",
+      }
     : apiProduct === undefined
       ? mockMatch
       : null;
@@ -57,14 +70,8 @@ export default function ProductDetail() {
         className="min-h-screen flex flex-col items-center justify-center"
         style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}
       >
-        <p className="text-gray-500 text-lg mb-4">
-          Không tìm thấy sản phẩm
-        </p>
-        <Link
-          to="/products"
-          className="underline"
-          style={{ color: "#cc323f" }}
-        >
+        <p className="text-gray-500 text-lg mb-4">Không tìm thấy sản phẩm</p>
+        <Link to="/products" className="underline" style={{ color: "#cc323f" }}>
           Quay lại danh sách
         </Link>
       </div>
@@ -85,12 +92,7 @@ export default function ProductDetail() {
     setTimeout(() => setAddedMsg(false), 2500);
   };
 
-  const related = products
-    .filter(
-      (p) =>
-        p.category === product.category && p.id !== product.id,
-    )
-    .slice(0, 4);
+  const related: any[] = [];
 
   return (
     <div
@@ -114,16 +116,11 @@ export default function ProductDetail() {
               Trang chủ
             </Link>
             <span className="mx-2">/</span>
-            <Link
-              to="/products"
-              className="hover:text-[#cc323f]"
-            >
+            <Link to="/products" className="hover:text-[#cc323f]">
               Sản phẩm
             </Link>
             <span className="mx-2">/</span>
-            <span style={{ color: "#0f172a" }}>
-              {product.name}
-            </span>
+            <span style={{ color: "#0f172a" }}>{product.name}</span>
           </div>
         </nav>
 
@@ -170,9 +167,7 @@ export default function ProductDetail() {
                 >
                   -
                   {Math.round(
-                    (1 -
-                      product.price / product.originalPrice) *
-                      100,
+                    (1 - product.price / product.originalPrice) * 100,
                   )}
                   %
                 </span>
@@ -180,9 +175,7 @@ export default function ProductDetail() {
               {product.images.length > 1 && (
                 <>
                   <button
-                    onClick={() =>
-                      setActiveImg(Math.max(0, activeImg - 1))
-                    }
+                    onClick={() => setActiveImg(Math.max(0, activeImg - 1))}
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow"
                     disabled={activeImg === 0}
                   >
@@ -191,16 +184,11 @@ export default function ProductDetail() {
                   <button
                     onClick={() =>
                       setActiveImg(
-                        Math.min(
-                          product.images.length - 1,
-                          activeImg + 1,
-                        ),
+                        Math.min(product.images.length - 1, activeImg + 1),
                       )
                     }
                     className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow"
-                    disabled={
-                      activeImg === product.images.length - 1
-                    }
+                    disabled={activeImg === product.images.length - 1}
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -215,10 +203,7 @@ export default function ProductDetail() {
                     onClick={() => setActiveImg(i)}
                     className="w-16 h-16 rounded-lg overflow-hidden border-2 transition-all"
                     style={{
-                      borderColor:
-                        activeImg === i
-                          ? "#cc323f"
-                          : "transparent",
+                      borderColor: activeImg === i ? "#cc323f" : "transparent",
                     }}
                   >
                     <img
@@ -303,9 +288,7 @@ export default function ProductDetail() {
                   >
                     -
                     {Math.round(
-                      (1 -
-                        product.price / product.originalPrice) *
-                        100,
+                      (1 - product.price / product.originalPrice) * 100,
                     )}
                     %
                   </span>
@@ -375,8 +358,7 @@ export default function ProductDetail() {
 
             {addedMsg && (
               <div className="mb-3 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-2 text-sm flex items-center gap-2">
-                <Check className="w-4 h-4" /> Đã thêm vào giỏ
-                hàng!
+                <Check className="w-4 h-4" /> Đã thêm vào giỏ hàng!
               </div>
             )}
 
@@ -390,12 +372,10 @@ export default function ProductDetail() {
                   color: "#cc323f",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    "#fdf4f3";
+                  e.currentTarget.style.backgroundColor = "#fdf4f3";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    "transparent";
+                  e.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
                 <ShoppingCart className="w-5 h-5" />
@@ -407,12 +387,10 @@ export default function ProductDetail() {
                 className="flex-1 flex items-center justify-center gap-2 text-white py-3 rounded-xl transition-colors disabled:opacity-40"
                 style={{ backgroundColor: "#cc323f" }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    "#ab2534";
+                  e.currentTarget.style.backgroundColor = "#ab2534";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    "#cc323f";
+                  e.currentTarget.style.backgroundColor = "#cc323f";
                 }}
               >
                 <Zap className="w-5 h-5" />

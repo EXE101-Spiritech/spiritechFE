@@ -9,7 +9,7 @@ import {
   Clock,
   ChevronRight,
 } from "lucide-react";
-import { combos, formatCurrency } from "../data";
+import { formatCurrency } from "../data";
 import { comboApi } from "@/features/combos/api";
 
 const HERO_IMG =
@@ -56,7 +56,7 @@ export default function Home() {
         usageGuide: "",
       }))
     : null;
-  const displayCombos = mappedApiCombos || combos;
+  const displayCombos = mappedApiCombos || [];
   const featuredCombos = displayCombos.slice(0, 3);
 
   return (
@@ -373,7 +373,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
 
       {/* CTA Banner */}
       <section

@@ -1,40 +1,29 @@
 import { useState, useEffect } from "react";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  X,
-  CalendarDays,
-  Package,
-  Search,
-} from "lucide-react";
-import { comboApi } from "@/features/combos/api";
-import { adminApi } from "@/features/admin/api";
+import { Plus, Pencil, Trash2, X, Package, Search } from "lucide-react";
 import { productApi } from "@/features/products/api";
+import { adminApi } from "@/features/admin/api";
 
 interface ComboItem {
   id: string;
-  uuid?: string;
   name: string;
   description: string;
-  banner_url: string;
-  starts_at: string;
-  expires_at: string;
-  product_count: number;
+  image: string;
+  price: number;
+  originalPrice?: number;
+  status: string;
 }
 
 const EMPTY_FORM = {
   name: "",
   description: "",
-  banner_url: "",
-  starts_at: "",
-  expires_at: "",
-  products: [] as { sku: string; discount_bps: number }[],
-  sort_order: 1,
+  image: "",
+  price: 0,
+  originalPrice: 0,
+  status: "active" as const,
 };
 
-function makeSlug(name: string): string {
-  return name
+function makeSlug(text: string) {
+  return text
     .toLowerCase()
     .replace(/đ/g, "d")
     .replace(/[^a-z0-9]+/g, "-")
@@ -50,50 +39,32 @@ export default function AdminCombo() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  // Product picker for combo products
-  const [productSearch, setProductSearch] = useState("");
-  const [allProducts, setAllProducts] = useState<
-    { sku: string; name: string }[]
-  >([]);
-  const [discountBps, setDiscountBps] = useState(1000);
-
-  // Load all products once for the picker
   useEffect(() => {
     productApi
-      .list({ limit: 200 })
-      .then((r) => {
-        const items = (r as any).data || r || [];
-        const mapped = (Array.isArray(items) ? items : []).map((p: any) => ({
-          sku: p.sku || p.slug || "",
-          name: p.name || "",
-        }));
-        setAllProducts(mapped);
+      .list({ limit: 100 })
+      .then(async (r) => {
+        // Fetch detail for each product to check is_combo field
+        // (list endpoint doesn't return is_combo)
+        const results = await Promise.allSettled(
+          r.data.map((p: any) => productApi.get(p.slug)),
+        );
+        const comboItems: ComboItem[] = [];
+        for (const result of results) {
+          if (result.status === "fulfilled" && result.value.is_combo) {
+            const d = result.value;
+            comboItems.push({
+              id: d.id,
+              name: d.name,
+              description: d.description || "",
+              image: d.images?.[0] || "",
+              price: d.base_price_vnd,
+              originalPrice: d.combo_original_price_vnd,
+              status: d.status,
+            });
+          }
+        }
+        setCombos(comboItems);
       })
-      .catch(() => {});
-  }, []);
-
-  const filteredProducts = allProducts.filter(
-    (p) =>
-      p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-      p.sku.toLowerCase().includes(productSearch.toLowerCase()),
-  );
-
-  useEffect(() => {
-    comboApi
-      .list()
-      .then((items) =>
-        setCombos(
-          items.map((i: any) => ({
-            id: i.slug,
-            name: i.name,
-            description: i.description,
-            banner_url: i.banner_url || "",
-            starts_at: i.starts_at || "",
-            expires_at: i.expires_at || "",
-            product_count: i.product_count || 0,
-          })),
-        ),
-      )
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -109,118 +80,81 @@ export default function AdminCombo() {
     setForm({
       name: c.name,
       description: c.description,
-      banner_url: c.banner_url || "",
-      starts_at: c.starts_at ? c.starts_at.slice(0, 16) : "",
-      expires_at: c.expires_at ? c.expires_at.slice(0, 16) : "",
-      products: [],
-      sort_order: 0,
+      image: c.image,
+      price: c.price,
+      originalPrice: c.originalPrice || 0,
+      status: c.status as any,
     });
     setModalOpen(true);
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) return;
+    if (!form.name.trim() || !form.price) return;
     const slug = makeSlug(form.name);
     const data = {
       slug,
       name: form.name,
-      description: form.description,
-      banner_url: form.banner_url || undefined,
-      starts_at: form.starts_at
-        ? new Date(form.starts_at).toISOString()
-        : new Date().toISOString(),
-      expires_at: form.expires_at
-        ? new Date(form.expires_at).toISOString()
-        : new Date().toISOString(),
-      products: form.products,
-      sort_order: form.sort_order,
+      description: form.description || undefined,
+      base_price_vnd: form.price,
+      images: form.image ? [form.image] : [],
+      is_combo: true,
+      combo_original_price_vnd:
+        form.originalPrice > 0 ? form.originalPrice : undefined,
+      status: form.status,
     };
 
     if (editingId) {
-      const item = combos.find((c) => c.id === editingId);
-      await adminApi.updateCombo(item?.uuid || editingId, data).catch(() => {});
+      await adminApi.updateProduct(editingId, data).catch(() => {});
       setCombos((prev) =>
         prev.map((c) =>
           c.id === editingId
             ? {
                 ...c,
-                slug,
                 name: data.name,
                 description: data.description || "",
-                banner_url: data.banner_url || "",
-                starts_at: data.starts_at,
-                expires_at: data.expires_at,
+                image: data.images?.[0] || "",
+                price: data.base_price_vnd,
+                originalPrice: data.combo_original_price_vnd,
+                status: data.status!,
               }
             : c,
         ),
       );
     } else {
       adminApi
-        .createCombo(data)
+        .createProduct(data)
         .then((res: any) => {
-          const newId = res.slug || slug;
+          const newId = res.product_id || slug;
           setCombos((prev) => [
             ...prev,
             {
               id: newId,
-              uuid: res.id,
               name: form.name,
               description: form.description,
-              banner_url: form.banner_url,
-              starts_at: form.starts_at,
-              expires_at: form.expires_at,
-              product_count: 0,
+              image: form.image,
+              price: form.price,
+              originalPrice: form.originalPrice || undefined,
+              status: form.status,
             },
           ]);
         })
-        .catch(() => {
-          setCombos((prev) => [
-            ...prev,
-            {
-              id: slug,
-              name: form.name,
-              description: form.description,
-              banner_url: form.banner_url,
-              starts_at: form.starts_at,
-              expires_at: form.expires_at,
-              product_count: 0,
-            },
-          ]);
-        });
+        .catch(() => {});
     }
     setModalOpen(false);
   };
 
   const handleDelete = (id: string) => {
-    const item = combos.find((c) => c.id === id);
-    adminApi.deleteCombo(item?.uuid || id).catch(() => {});
+    adminApi.deleteProduct(id).catch(() => {});
     setCombos((prev) => prev.filter((c) => c.id !== id));
     setDeleteId(null);
   };
 
-  const addProduct = (sku: string) => {
-    if (form.products.some((p) => p.sku === sku)) return;
-    setForm((f) => ({
-      ...f,
-      products: [...f.products, { sku, discount_bps: discountBps }],
-    }));
-    setProductSearch("");
-  };
-
-  const removeProduct = (sku: string) => {
-    setForm((f) => ({
-      ...f,
-      products: f.products.filter((p) => p.sku !== sku),
-    }));
-  };
-
-  if (loading) {
+  if (loading)
     return (
       <div className="flex items-center justify-center py-20">
         <span className="inline-block w-6 h-6 border-2 border-[#cc323f] border-t-transparent rounded-full animate-spin" />
       </div>
     );
-  }
 
   return (
     <div style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}>
@@ -230,18 +164,16 @@ export default function AdminCombo() {
             className="text-xl font-semibold text-gray-900"
             style={{ fontFamily: "Lora, serif" }}
           >
-            Combo sự kiện
+            Combo
           </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {combos.length} combo đã tạo
-          </p>
+          <p className="text-sm text-gray-500 mt-0.5">{combos.length} combo</p>
         </div>
         <button
           onClick={openAdd}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-medium transition-all hover:opacity-90"
           style={{ background: "linear-gradient(135deg, #cc323f, #902131)" }}
         >
-          <Plus size={16} /> Tạo combo
+          <Plus size={16} /> Thêm combo
         </button>
       </div>
 
@@ -256,14 +188,14 @@ export default function AdminCombo() {
                 <th className="text-left px-5 py-3.5 text-gray-500 font-medium">
                   Combo
                 </th>
-                <th className="text-left px-5 py-3.5 text-gray-500 font-medium hidden md:table-cell">
-                  Mô tả
+                <th className="text-center px-5 py-3.5 text-gray-500 font-medium hidden sm:table-cell">
+                  Giá gốc
                 </th>
                 <th className="text-center px-5 py-3.5 text-gray-500 font-medium hidden sm:table-cell">
-                  Sản phẩm
+                  Giá combo
                 </th>
-                <th className="text-center px-5 py-3.5 text-gray-500 font-medium hidden lg:table-cell">
-                  Hiệu lực
+                <th className="text-center px-5 py-3.5 text-gray-500 font-medium hidden md:table-cell">
+                  Trạng thái
                 </th>
                 <th className="text-center px-5 py-3.5 text-gray-500 font-medium">
                   Thao tác
@@ -278,52 +210,68 @@ export default function AdminCombo() {
                 >
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
-                      {c.banner_url ? (
-                        <img
-                          src={c.banner_url}
-                          alt={c.name}
-                          className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-gray-100"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <CalendarDays size={16} className="text-gray-400" />
-                        </div>
-                      )}
-                      <p className="font-medium text-gray-800 text-sm">
-                        {c.name}
-                      </p>
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-gray-100 overflow-hidden">
+                        {c.image ? (
+                          <img
+                            src={c.image}
+                            alt={c.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Package size={16} style={{ color: "#cc323f" }} />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-800 text-sm">
+                          {c.name}
+                        </p>
+                        {c.description && (
+                          <p className="text-gray-400 text-xs mt-0.5 truncate max-w-[200px]">
+                            {c.description}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 hidden md:table-cell">
-                    <p className="text-gray-500 text-sm line-clamp-2">
-                      {c.description}
-                    </p>
+                  <td className="px-5 py-3.5 text-center hidden sm:table-cell">
+                    {c.originalPrice ? (
+                      <span className="text-gray-400 line-through">
+                        {c.originalPrice.toLocaleString()}₫
+                      </span>
+                    ) : (
+                      <span className="text-gray-300">—</span>
+                    )}
                   </td>
                   <td className="px-5 py-3.5 text-center hidden sm:table-cell">
                     <span
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
-                      style={{ background: "#fdf4f3", color: "#cc323f" }}
+                      className="font-semibold"
+                      style={{ color: "#cc323f" }}
                     >
-                      <Package size={11} /> {c.product_count}
+                      {c.price.toLocaleString()}₫
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-center hidden lg:table-cell">
-                    <span className="text-xs text-gray-500">
-                      {c.starts_at?.slice(0, 10) || "—"} →{" "}
-                      {c.expires_at?.slice(0, 10) || "—"}
-                    </span>
+                  <td className="px-5 py-3.5 text-center hidden md:table-cell">
+                    {c.status === "active" ? (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-600">
+                        Đang bán
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                        Đã ẩn
+                      </span>
+                    )}
                   </td>
                   <td className="px-5 py-3.5 text-center">
                     <div className="flex items-center justify-center gap-1.5">
                       <button
                         onClick={() => openEdit(c)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50"
                       >
                         <Pencil size={15} />
                       </button>
                       <button
                         onClick={() => setDeleteId(c.id)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50"
                       >
                         <Trash2 size={15} />
                       </button>
@@ -343,17 +291,17 @@ export default function AdminCombo() {
 
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h3
                 className="font-semibold text-gray-900"
                 style={{ fontFamily: "Lora, serif" }}
               >
-                {editingId ? "Chỉnh sửa combo" : "Tạo combo mới"}
+                {editingId ? "Chỉnh sửa combo" : "Thêm combo mới"}
               </h3>
               <button
                 onClick={() => setModalOpen(false)}
-                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-600"
               >
                 <X size={18} />
               </button>
@@ -366,11 +314,111 @@ export default function AdminCombo() {
                 <input
                   value={form.name}
                   onChange={(e) =>
-                    setForm((f) => ({ ...f, name: e.target.value }))
+                    setForm((f: any) => ({ ...f, name: e.target.value }))
                   }
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
-                  placeholder="VD: Combo Tết Đinh Mùi 2027"
+                  placeholder="VD: Combo Tết 2027"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">
+                    Giá combo (₫) *
+                  </label>
+                  <input
+                    type="number"
+                    value={form.price || ""}
+                    onChange={(e) =>
+                      setForm((f: any) => ({ ...f, price: +e.target.value }))
+                    }
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">
+                    Giá gốc (₫)
+                  </label>
+                  <input
+                    type="number"
+                    value={form.originalPrice || ""}
+                    onChange={(e) =>
+                      setForm((f: any) => ({
+                        ...f,
+                        originalPrice: +e.target.value,
+                      }))
+                    }
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">
+                  Hình ảnh
+                </label>
+                <div className="flex items-center gap-3">
+                  {form.image ? (
+                    <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
+                      <img
+                        src={form.image}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        onClick={() =>
+                          setForm((f: any) => ({ ...f, image: "" }))
+                        }
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
+                      >
+                        X
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
+                      Chưa có ảnh
+                    </div>
+                  )}
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    Tải ảnh lên
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const result = await adminApi.uploadImage(file);
+                          setForm((f: any) => ({ ...f, image: result.url }));
+                        } catch {
+                          alert("Tải ảnh thất bại. Vui lòng thử lại.");
+                        }
+                      }}
+                    />
+                  </label>
+                  <input
+                    value={form.image}
+                    onChange={(e) =>
+                      setForm((f: any) => ({ ...f, image: e.target.value }))
+                    }
+                    className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
+                    placeholder="Hoặc nhập URL trực tiếp..."
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm text-gray-700 mb-1">
@@ -379,153 +427,12 @@ export default function AdminCombo() {
                 <textarea
                   value={form.description}
                   onChange={(e) =>
-                    setForm((f) => ({ ...f, description: e.target.value }))
+                    setForm((f: any) => ({ ...f, description: e.target.value }))
                   }
                   rows={3}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 resize-none"
-                  placeholder="Mô tả ngắn về combo..."
+                  placeholder="Mô tả combo..."
                 />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-700 mb-1">
-                  URL banner
-                </label>
-                <input
-                  value={form.banner_url}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, banner_url: e.target.value }))
-                  }
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">
-                    Bắt đầu
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={form.starts_at}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, starts_at: e.target.value }))
-                    }
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">
-                    Kết thúc
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={form.expires_at}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, expires_at: e.target.value }))
-                    }
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
-                  />
-                </div>
-              </div>
-
-              {/* Product Picker */}
-              <div className="border border-gray-200 rounded-xl p-4">
-                <label className="block text-sm text-gray-700 mb-2 font-medium">
-                  Sản phẩm trong combo
-                </label>
-
-                {form.products.length > 0 && (
-                  <div className="space-y-1.5 mb-3">
-                    {form.products.map((p) => {
-                      const prod = allProducts.find((ap) => ap.sku === p.sku);
-                      return (
-                        <div
-                          key={p.sku}
-                          className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 text-sm"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Package
-                              size={14}
-                              className="text-gray-400 flex-shrink-0"
-                            />
-                            <span className="text-gray-700 truncate">
-                              {prod?.name || p.sku}
-                            </span>
-                            <span className="text-xs text-gray-400 font-mono flex-shrink-0">
-                              ({p.sku})
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <span
-                              className="text-xs font-medium"
-                              style={{ color: "#cc323f" }}
-                            >
-                              -{(p.discount_bps / 100).toFixed(0)}%
-                            </span>
-                            <button
-                              onClick={() => removeProduct(p.sku)}
-                              className="p-0.5 rounded text-gray-400 hover:text-red-500"
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Search
-                      size={14}
-                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
-                    />
-                    <input
-                      value={productSearch}
-                      onChange={(e) => setProductSearch(e.target.value)}
-                      placeholder="Tìm SKU hoặc tên sản phẩm..."
-                      className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-red-200"
-                    />
-                    {productSearch && filteredProducts.length > 0 && (
-                      <div className="absolute top-full mt-1 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-32 overflow-y-auto">
-                        {filteredProducts.slice(0, 8).map((p) => (
-                          <button
-                            key={p.sku}
-                            type="button"
-                            onClick={() => addProduct(p.sku)}
-                            className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 flex items-center justify-between"
-                          >
-                            <span className="text-gray-700 truncate">
-                              {p.name}
-                            </span>
-                            <span className="text-gray-400 font-mono flex-shrink-0 ml-2">
-                              {p.sku}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <input
-                      type="number"
-                      value={discountBps}
-                      onChange={(e) =>
-                        setDiscountBps(Math.max(0, +e.target.value))
-                      }
-                      className="w-16 border border-gray-200 rounded-lg px-2 py-2 text-xs text-center focus:outline-none focus:ring-1 focus:ring-red-200"
-                      placeholder="bps"
-                    />
-                    <span className="text-xs text-gray-400">
-                      {(discountBps / 100).toFixed(0)}%
-                    </span>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-400 mt-1.5">
-                  Giảm giá tính theo bps (1000 = 10%). Nhập SKU và chọn sản
-                  phẩm.
-                </p>
               </div>
             </div>
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
@@ -542,7 +449,7 @@ export default function AdminCombo() {
                   background: "linear-gradient(135deg, #cc323f, #902131)",
                 }}
               >
-                {editingId ? "Lưu thay đổi" : "Tạo combo"}
+                {editingId ? "Lưu" : "Tạo"}
               </button>
             </div>
           </div>
@@ -562,7 +469,7 @@ export default function AdminCombo() {
               Xóa combo?
             </h3>
             <p className="text-sm text-gray-500 mb-5">
-              Dữ liệu combo sẽ bị xóa vĩnh viễn.
+              Combo sẽ bị xóa vĩnh viễn.
             </p>
             <div className="flex gap-3">
               <button
