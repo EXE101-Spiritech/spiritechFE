@@ -614,6 +614,95 @@ GET /v1/coupons/TET2027
 }
 ```
 
+### 6.2 Admin Coupon CRUD 🔒 Admin
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/admin/coupons` | List all coupons |
+| `POST` | `/admin/coupons` | Create coupon |
+| `DELETE` | `/admin/coupons/:id` | Soft-delete (sets status to `disabled`) |
+
+Requires JWT with `admin` or `staff` role.
+
+#### List
+
+```http
+GET /admin/coupons
+Authorization: Bearer <token>
+```
+
+```json
+[
+  {
+    "id": "ffffffff-0000-0000-0000-000000000001",
+    "code": "TET2027",
+    "discount_type": "percent",
+    "discount_value": 1000,
+    "min_order_vnd": 500000,
+    "max_uses": 100,
+    "remaining": 100,
+    "expires_at": "2027-02-15T16:59:59Z",
+    "status": "active"
+  }
+]
+```
+
+#### Create
+
+```http
+POST /admin/coupons
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{
+  "code": "SALE10",
+  "discount_type": "percent",
+  "discount_value": 1000,
+  "min_order_vnd": 500000,
+  "max_uses": 100,
+  "starts_at": "2026-06-01T00:00:00Z",
+  "expires_at": "2026-12-31T23:59:59Z",
+  "status": "active"
+}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `code` | string | ✅ | Unique coupon code |
+| `discount_type` | string | ✅ | `percent` (bps) or `fixed` (VND) |
+| `discount_value` | int64 | ✅ | Percent: in bps (1000 = 10%). Fixed: VND amount |
+| `min_order_vnd` | int64 | | Minimum order value to apply |
+| `max_uses` | int32 | | Max times coupon can be used. Null = unlimited |
+| `starts_at` | string | | RFC 3339. Defaults to now |
+| `expires_at` | string | | RFC 3339. Null = no expiry |
+| `status` | string | | `active`, `disabled`, `exhausted` |
+
+**Response 201:** Returns the created coupon object (same shape as list).
+
+#### Delete
+
+```http
+DELETE /admin/coupons/{id}
+Authorization: Bearer <token>
+```
+
+Get the `id` from the list response first, then delete:
+
+```js
+const list = await fetch('/admin/coupons', { headers });
+const coupons = await list.json();
+const target = coupons.find(c => c.code === 'TET2027');
+
+await fetch(`/admin/coupons/${target.id}`, {
+  method: 'DELETE',
+  headers
+});
+```
+
+**Response 204:** No content.
+
 ---
 
 ## 7. Payments (PayOS)

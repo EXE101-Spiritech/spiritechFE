@@ -75,7 +75,9 @@ export interface CreateCouponReq {
   discount_value: number;
   min_order_vnd?: number;
   max_uses?: number;
+  starts_at?: string;
   expires_at?: string;
+  status?: string;
 }
 
 export const adminApi = {
@@ -227,5 +229,6 @@ export const adminApi = {
     axiosClient.post("/admin/coupons", data).then((r) => r.data),
 
   /** Delete coupon */
-  deleteCoupon: (id: string) => axiosClient.delete(`/admin/coupons/${id}`),
+  deleteCoupon: (id: string) =>
+    axiosClient.delete(`/admin/coupons/${id}`).then((r) => r.data),
 };

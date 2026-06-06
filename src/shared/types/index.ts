@@ -276,6 +276,7 @@ export interface ComboDetail {
 
 // ── Coupons ────────────────────────────────────────────────────────────────
 export interface CouponInfo {
+  id: string;
   code: string;
   discount_type: string;
   discount_value: number;

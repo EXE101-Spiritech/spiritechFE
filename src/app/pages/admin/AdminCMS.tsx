@@ -58,7 +58,7 @@ export default function AdminCMS() {
     setLoading(true);
     adminApi
       .listBlogs()
-      .then((r: any) => setPosts(Array.isArray(r) ? r : (r.data || [])))
+      .then((r: any) => setPosts(Array.isArray(r) ? r : r.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   };
