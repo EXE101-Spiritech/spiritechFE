@@ -25,7 +25,6 @@ import AdminInventory from "./AdminInventory";
 import AdminCMS from "./AdminCMS";
 import AdminCoupons from "./AdminCoupons";
 import AdminOrders from "./AdminOrders";
-import AdminAnalytics from "./AdminAnalytics";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Section =
@@ -36,8 +35,7 @@ type Section =
   | "inventory"
   | "cms"
   | "coupons"
-  | "orders"
-  | "analytics";
+  | "orders";
 
 const NAV_ITEMS: { key: Section; icon: React.ElementType; label: string }[] = [
   { key: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -48,7 +46,7 @@ const NAV_ITEMS: { key: Section; icon: React.ElementType; label: string }[] = [
   { key: "cms", icon: FileText, label: "Nội dung (CMS)" },
   { key: "coupons", icon: Tag, label: "Mã giảm giá" },
   { key: "orders", icon: ShoppingCart, label: "Đơn hàng" },
-  { key: "analytics", icon: BarChart2, label: "Thống kê" },
+
 ];
 
 const SECTION_TITLES: Record<Section, string> = {
@@ -60,8 +58,7 @@ const SECTION_TITLES: Record<Section, string> = {
   cms: "Quản lý Nội dung",
   coupons: "Mã giảm giá",
   orders: "Quản lý đơn hàng",
-  analytics: "Thống kê & Báo cáo",
-};
+  };
 
 // ─── Admin Layout ─────────────────────────────────────────────────────────────
 function AdminLayout({
@@ -276,7 +273,6 @@ function AdminLayout({
           {activeSection === "cms" && <AdminCMS />}
           {activeSection === "coupons" && <AdminCoupons />}
           {activeSection === "orders" && <AdminOrders />}
-          {activeSection === "analytics" && <AdminAnalytics />}
         </main>
       </div>
     </div>

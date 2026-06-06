@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Search, X, Eye, EyeOff } from "lucide-react";
 import { formatCurrency } from "../../data/index";
-import { productApi } from "@/features/products/api";
 import { adminApi, Category } from "@/features/admin/api";
 
 interface AdminProduct {
@@ -32,8 +31,8 @@ export default function AdminProducts() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
-    productApi
-      .list({ limit: 100 })
+    adminApi
+      .listProducts({ size: 100 })
       .then((r) => {
         const apiProducts = r.data.map((p: any) => ({
           id: p.slug,
@@ -41,16 +40,16 @@ export default function AdminProducts() {
           name: p.name,
           category: p.category_name || p.category || "",
           price: p.base_price_vnd,
-          stock: 0,
+          stock: p.quantity ?? 0,
           status:
             p.status === "active" ? ("active" as const) : ("hidden" as const),
           image: p.images?.[0] || "",
-          description: "",
+          description: p.description || "",
         }));
         setProducts(apiProducts);
       })
       .catch(() => {
-        setProducts(toAdminProducts());
+        setProducts([]);
       })
       .finally(() => setLoading(false));
 

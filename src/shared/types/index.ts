@@ -70,6 +70,7 @@ export interface ProductListItem {
   name_en: string;
   base_price_vnd: number;
   images: string[];
+  quantity: number;
   status: string;
   created_at: string;
 }
@@ -81,6 +82,7 @@ export interface ProductDetail {
   description: string;
   base_price_vnd: number;
   images: string[];
+  quantity: number;
   status: string;
   version: number;
   is_combo: boolean;

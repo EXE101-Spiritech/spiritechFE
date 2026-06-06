@@ -1,13 +1,21 @@
 import { useState, useEffect } from "react";
-import { Search, Package, AlertTriangle, PackageCheck } from "lucide-react";
-import { productApi } from "@/features/products/api";
+import {
+  Search,
+  Package,
+  AlertTriangle,
+  PackageCheck,
+  Minus,
+  Plus,
+} from "lucide-react";
+import { adminApi } from "@/features/admin/api";
 
 interface InventoryItem {
   productId: string;
   productName: string;
-  sku: string;
+  slug: string;
   category: string;
   price: number;
+  quantity: number;
   status: string;
 }
 
@@ -15,18 +23,21 @@ export default function AdminInventory() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [restockModal, setRestockModal] = useState<InventoryItem | null>(null);
+  const [restockQty, setRestockQty] = useState(50);
 
   useEffect(() => {
-    productApi
-      .list({ limit: 100 })
+    adminApi
+      .listProducts({ size: 100 })
       .then((r) => {
         setItems(
           r.data.map((p: any) => ({
             productId: p.id,
             productName: p.name,
-            sku: p.slug,
+            slug: p.slug,
             category: p.category_name || "",
             price: p.base_price_vnd,
+            quantity: p.quantity ?? 0,
             status: p.status,
           })),
         );
@@ -35,11 +46,34 @@ export default function AdminInventory() {
       .finally(() => setLoading(false));
   }, []);
 
+  const updateStock = async (id: string, qty: number) => {
+    try {
+      await adminApi.updateStock(id, qty);
+      setItems((prev) =>
+        prev.map((i) => (i.productId === id ? { ...i, quantity: qty } : i)),
+      );
+    } catch {
+      /* ignore */
+    }
+    setRestockModal(null);
+  };
+
+  const adjustStock = (id: string, delta: number) => {
+    const item = items.find((i) => i.productId === id);
+    if (!item) return;
+    const newQty = Math.max(0, item.quantity + delta);
+    adminApi.updateStock(id, newQty).catch(() => {});
+    setItems((prev) =>
+      prev.map((i) => (i.productId === id ? { ...i, quantity: newQty } : i)),
+    );
+  };
+
   const filtered = items.filter(
     (i) =>
       i.productName.toLowerCase().includes(search.toLowerCase()) ||
-      i.sku.toLowerCase().includes(search.toLowerCase()),
+      i.slug.toLowerCase().includes(search.toLowerCase()),
   );
+  const lowCount = items.filter((i) => i.quantity < 10).length;
 
   if (loading)
     return (
@@ -50,7 +84,6 @@ export default function AdminInventory() {
 
   return (
     <div style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}>
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h2
@@ -65,7 +98,6 @@ export default function AdminInventory() {
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
           <div className="flex items-center gap-2 mb-1">
@@ -76,6 +108,18 @@ export default function AdminInventory() {
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
           <div className="flex items-center gap-2 mb-1">
+            <AlertTriangle size={16} className="text-amber-500" />
+            <span className="text-xs text-gray-500">Sắp hết hàng</span>
+          </div>
+          <p
+            className="text-2xl font-semibold"
+            style={{ color: lowCount > 0 ? "#d97706" : "#16a34a" }}
+          >
+            {lowCount}
+          </p>
+        </div>
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-2 mb-1">
             <Package size={16} className="text-green-500" />
             <span className="text-xs text-gray-500">Đang hoạt động</span>
           </div>
@@ -83,18 +127,8 @@ export default function AdminInventory() {
             {items.filter((i) => i.status === "active").length}
           </p>
         </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle size={16} className="text-amber-500" />
-            <span className="text-xs text-gray-500">Đã ẩn</span>
-          </div>
-          <p className="text-2xl font-semibold text-amber-600">
-            {items.filter((i) => i.status !== "active").length}
-          </p>
-        </div>
       </div>
 
-      {/* Search */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1 max-w-xs">
           <Search
@@ -104,13 +138,12 @@ export default function AdminInventory() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo tên hoặc slug..."
-            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
+            placeholder="Tìm theo tên..."
+            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none"
           />
         </div>
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -123,61 +156,89 @@ export default function AdminInventory() {
                   Sản phẩm
                 </th>
                 <th className="text-left px-5 py-3.5 text-gray-500 font-medium hidden sm:table-cell">
-                  Slug
-                </th>
-                <th className="text-left px-5 py-3.5 text-gray-500 font-medium hidden md:table-cell">
                   Danh mục
                 </th>
                 <th className="text-right px-5 py-3.5 text-gray-500 font-medium hidden md:table-cell">
                   Giá
                 </th>
                 <th className="text-center px-5 py-3.5 text-gray-500 font-medium">
-                  Trạng thái
+                  Tồn kho
+                </th>
+                <th className="text-center px-5 py-3.5 text-gray-500 font-medium">
+                  Điều chỉnh
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filtered.map((item) => (
-                <tr
-                  key={item.productId}
-                  className="hover:bg-gray-50/50 transition-colors"
-                >
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-gray-800 text-sm">
-                        {item.productName}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-gray-500 font-mono text-xs hidden sm:table-cell">
-                    {item.sku}
-                  </td>
-                  <td className="px-5 py-3.5 hidden md:table-cell">
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-md"
-                      style={{ background: "#fdf8f0", color: "#902131" }}
-                    >
-                      {item.category || "—"}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-right hidden md:table-cell">
-                    <span className="font-medium text-gray-900">
-                      {item.price.toLocaleString()}₫
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-center">
-                    {item.status === "active" ? (
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-600">
-                        Đang bán
+              {filtered.map((item) => {
+                const isLow = item.quantity < 10;
+                return (
+                  <tr
+                    key={item.productId}
+                    className={`transition-colors ${isLow ? "bg-amber-50/40" : "hover:bg-gray-50/50"}`}
+                  >
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2">
+                        {isLow && (
+                          <AlertTriangle
+                            size={14}
+                            className="text-amber-500 flex-shrink-0"
+                          />
+                        )}
+                        <p className="font-medium text-gray-800 text-sm">
+                          {item.productName}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5 hidden sm:table-cell">
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-md"
+                        style={{ background: "#fdf8f0", color: "#902131" }}
+                      >
+                        {item.category || "—"}
                       </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
-                        Đã ẩn
+                    </td>
+                    <td className="px-5 py-3.5 text-right hidden md:table-cell">
+                      <span className="font-medium text-gray-900">
+                        {item.price.toLocaleString()}₫
                       </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-5 py-3.5 text-center">
+                      <span
+                        className={`text-base font-semibold ${item.quantity === 0 ? "text-red-600" : isLow ? "text-amber-600" : "text-gray-900"}`}
+                      >
+                        {item.quantity}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => adjustStock(item.productId, -1)}
+                          className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100"
+                        >
+                          <Minus size={12} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setRestockModal(item);
+                            setRestockQty(50);
+                          }}
+                          className="px-3 py-1 rounded-lg text-xs font-medium text-white"
+                          style={{ background: "#cc323f" }}
+                        >
+                          Nhập
+                        </button>
+                        <button
+                          onClick={() => adjustStock(item.productId, 1)}
+                          className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100"
+                        >
+                          <Plus size={12} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {filtered.length === 0 && (
@@ -187,6 +248,73 @@ export default function AdminInventory() {
           )}
         </div>
       </div>
+
+      {restockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h3
+              className="font-semibold text-gray-900 mb-1"
+              style={{ fontFamily: "Lora, serif" }}
+            >
+              Nhập hàng
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              {restockModal.productName}
+            </p>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs text-gray-500">Tồn hiện tại:</span>
+              <span className="font-semibold">{restockModal.quantity}</span>
+            </div>
+            <div className="flex items-center gap-3 mb-5">
+              <button
+                onClick={() => setRestockQty((q) => Math.max(1, q - 10))}
+                className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50"
+              >
+                <Minus size={14} />
+              </button>
+              <input
+                type="number"
+                value={restockQty}
+                min={1}
+                onChange={(e) => setRestockQty(Math.max(1, +e.target.value))}
+                className="flex-1 text-center border border-gray-200 rounded-xl py-2.5 text-lg font-semibold focus:outline-none"
+              />
+              <button
+                onClick={() => setRestockQty((q) => q + 10)}
+                className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50"
+              >
+                <Plus size={14} />
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mb-5">
+              Sau nhập:{" "}
+              <span className="font-semibold text-gray-900">
+                {restockModal.quantity + restockQty}
+              </span>
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRestockModal(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() =>
+                  updateStock(
+                    restockModal.productId,
+                    restockModal.quantity + restockQty,
+                  )
+                }
+                className="flex-1 py-2.5 rounded-xl text-white text-sm font-medium"
+                style={{ background: "#cc323f" }}
+              >
+                Xác nhận nhập
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

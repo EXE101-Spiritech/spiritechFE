@@ -41,7 +41,9 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIs...
   - [9.3 Tool Calling Flow](#93-tool-calling-flow)
   - [9.4 Rendering Guide](#94-rendering-guide)
   - [9.5 Session Management](#95-session-management)
-- [10. Admin Analytics](#10-admin-analytics)
+- [10. Admin Products](#10-admin-products)
+- [11. Admin Orders](#11-admin-orders)
+- [12. Admin Analytics](#12-admin-analytics)
 - [Appendix: Error Codes](#appendix-error-codes)
 
 ---
@@ -204,10 +206,18 @@ Authorization: Bearer <token>
 ### 2.1 List Products 🔓 Public
 
 ```http
-GET /v1/products?limit=20&cursor=
+GET /v1/products?page=1&size=20&category_id=&min_price=&max_price=
 ```
 
-**Response 200: (cursor-based pagination)**
+| Query param | Type | Default | Description |
+|---|---|---|---|
+| `page` | int | 1 | Page number |
+| `size` | int | 20 | Items per page (max 100) |
+| `category_id` | uuid | | Filter by category UUID |
+| `min_price` | int64 | | Minimum price in VND |
+| `max_price` | int64 | | Maximum price in VND |
+
+**Response 200:**
 ```json
 {
   "data": [
@@ -218,11 +228,14 @@ GET /v1/products?limit=20&cursor=
       "name_en": "Altar Table — Rosewood 1.2m",
       "base_price_vnd": 8500000,
       "images": ["https://example.com/img/ban-tho-1.jpg"],
+      "quantity": 10,
       "status": "active",
       "created_at": "2026-05-27T16:30:56.155927Z"
     }
   ],
-  "total": 21
+  "total": 22,
+  "page": 1,
+  "size": 20
 }
 ```
 
@@ -241,6 +254,7 @@ GET /v1/products/ban-tho-go-huong-tam-gia-1m2
   "description": "...",
   "base_price_vnd": 8500000,
   "images": ["..."],
+  "quantity": 10,
   "status": "active",
   "version": 1,
   "is_combo": false
@@ -1193,11 +1207,196 @@ Authorization: Bearer <token> (optional)
 
 ---
 
-## 10. Admin Analytics
+## 10. Admin Products
+
+All endpoints require JWT with `admin` or `staff` role.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/admin/products` | List all products (any status, paginated) |
+| `POST` | `/admin/products` | Create product |
+| `PUT` | `/admin/products/:id` | Update product (⚠️ full replace) |
+| `PUT` | `/admin/products/:id/stock` | Update stock quantity |
+| `DELETE` | `/admin/products/:id` | Hard delete |
+
+### 10.1 List Products 🔒 Admin
+
+```http
+GET /admin/products?page=1&size=20&status=active&category_id=&min_price=&max_price=
+Authorization: Bearer <token>
+```
+
+Same query params as `GET /v1/products` plus:
+
+| Query param | Type | Description |
+|---|---|---|
+| `status` | string | Filter by status (`active`, `draft`, `archived`). Omit for all. |
+
+**Response 200:**
+```json
+{
+  "data": [
+    {
+      "id": "b0000000-...",
+      "slug": "ban-tho-go-huong-tam-gia-1m2",
+      "name": "Bàn Thờ Gỗ Hương Tăm 1m2",
+      "base_price_vnd": 8500000,
+      "quantity": 10,
+      "status": "active",
+      "is_combo": false,
+      "created_at": "2026-05-27T16:30:56Z"
+    }
+  ],
+  "total": 22,
+  "page": 1,
+  "size": 20
+}
+```
+
+### 10.2 Create Product 🔒 Admin
+
+See [Admin Product API](./docs/api/admin-product.md) for full reference.
+
+### 10.3 Update Stock 🔒 Admin
+
+```http
+PUT /admin/products/{id}/stock
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{"quantity": 25}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `quantity` | int | ✅ | New stock count (min 0). Clamped to non-negative. |
+
+**Response 200:**
+```json
+{"product_id": "uuid", "quantity": 25, "updated": true}
+```
+
+---
+
+## 11. Admin Orders
+
+All endpoints require JWT with `admin` or `staff` role.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/admin/orders` | List all orders with filters |
+| `GET` | `/admin/orders/:id` | View any order (no ownership check) |
+| `PUT` | `/admin/orders/:id/status` | Advance order status |
+| `PUT` | `/admin/orders/:id/shipping` | Set shipping carrier + tracking |
+
+### 11.1 List Orders 🔒 Admin
+
+```http
+GET /admin/orders?page=1&size=20&status=paid&from=2026-06-01&to=2026-06-06
+Authorization: Bearer <token>
+```
+
+| Query param | Type | Description |
+|---|---|---|---|
+| `page` | int | Page number (default 1) |
+| `size` | int | Items per page (default 20, max 100) |
+| `status` | string | Filter by status |
+| `from` | string | Filter by placed_at >= (RFC 3339 or date) |
+| `to` | string | Filter by placed_at < (RFC 3339 or date) |
+
+**Response 200:**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "order_number": "SP-260606-00005",
+      "status": "pending_payment",
+      "total_vnd": 8500000,
+      "placed_at": "2026-06-06T15:55:03Z"
+    }
+  ],
+  "total": 6,
+  "page": 1,
+  "size": 20
+}
+```
+
+### 11.2 Get Order 🔒 Admin
+
+```http
+GET /admin/orders/{id}
+Authorization: Bearer <token>
+```
+
+Same response shape as `GET /v1/orders/:id` but without ownership check.
+
+### 11.3 Update Status 🔒 Admin
+
+```http
+PUT /admin/orders/{id}/status
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{"status": "paid"}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `status` | string | ✅ | One of: `paid`, `confirmed`, `fulfilling`, `shipped`, `delivered`, `cancelled`, `refunded`, `failed` |
+
+**Status machine (valid transitions):**
+```
+pending_payment ──→ paid ──→ confirmed ──→ fulfilling ──→ shipped ──→ delivered
+       │              │          │               │            │             │
+       ├── cancelled  ├── refunded ←─────────────┴────────────┴── refunded  │
+       │              │                                                    │
+       └── failed ────┘                                              refunded
+```
+
+Each transition automatically sets the corresponding timestamp (`paid_at`, `confirmed_at`, `shipped_at`, `delivered_at`, `cancelled_at`).
+
+**Response 200:**
+```json
+{"order_id": "uuid", "status": "paid", "updated": true}
+```
+
+### 11.4 Update Shipping 🔒 Admin
+
+```http
+PUT /admin/orders/{id}/shipping
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{
+  "carrier": "GHN",
+  "tracking": "GHN123456789"
+}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `carrier` | string | ✅ | Carrier name (e.g. `GHN`, `Viettel Post`, `Nhận tại cửa hàng`) |
+| `tracking` | string | | Tracking number. If provided and `shipped_at` not yet set, auto-sets `shipped_at` to now. |
+
+**Response 200:**
+```json
+{"order_id": "uuid", "carrier": "GHN", "tracking": "GHN123456789", "updated": true}
+```
+
+**Note for store pickup:** Set `"carrier": "Nhận tại cửa hàng"` with empty or no `tracking`.
+
+---
+
+## 12. Admin Analytics
 
 All admin endpoints require JWT with `admin` or `staff` role.
 
-### 10.1 Dashboard 🔒 Admin
+### 12.1 Dashboard 🔒 Admin
 
 ```http
 GET /admin/analytics/dashboard
@@ -1214,7 +1413,7 @@ Authorization: Bearer <token>
 }
 ```
 
-### 10.2 Revenue 🔒 Admin
+### 12.2 Revenue 🔒 Admin
 
 ```http
 GET /admin/analytics/revenue?days=30
@@ -1230,7 +1429,7 @@ Authorization: Bearer <token>
 }
 ```
 
-### 10.3 Top Products 🔒 Admin
+### 12.3 Top Products 🔒 Admin
 
 ```http
 GET /admin/analytics/top-products?days=30&limit=10
@@ -1249,7 +1448,7 @@ Authorization: Bearer <token>
 ]
 ```
 
-### 10.4 Orders by Status 🔒 Admin
+### 12.4 Orders by Status 🔒 Admin
 
 ```http
 GET /admin/analytics/orders-by-status
@@ -1270,7 +1469,7 @@ Authorization: Bearer <token>
 }
 ```
 
-### 10.5 User Engagement 🔒 Admin
+### 12.5 User Engagement 🔒 Admin
 
 ```http
 GET /admin/analytics/user-engagement?days=30
@@ -1307,7 +1506,7 @@ Authorization: Bearer <token>
 }
 ```
 
-### 10.6 AI Usage 🔒 Admin
+### 12.6 AI Usage 🔒 Admin
 
 ```http
 GET /admin/analytics/ai-usage?days=30
