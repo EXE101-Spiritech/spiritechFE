@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../data";
 import { Logo } from "./Logo";
 import { AdminBadge } from "./AdminBadge";
+import { productApi } from "@/features/products/api";
 
 const popularProducts: any[] = [];
 const allItems: any[] = [];
@@ -16,6 +17,8 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [mobileSearchQuery, setMobileSearchQuery] = useState("");
+  const [apiResults, setApiResults] = useState<any[]>([]);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const { totalItems } = useCart();
   const { isLoggedIn, user } = useAuth();
   const isAdmin =
@@ -40,22 +43,14 @@ export function Navbar() {
     return location.pathname.startsWith(to);
   };
 
-  const searchResults =
-    searchQuery.length > 1
-      ? allItems
-          .filter((i) =>
-            i.name.toLowerCase().includes(searchQuery.toLowerCase()),
-          )
-          .slice(0, 6)
-      : [];
+  const searchResults = searchQuery.length > 1 ? apiResults : [];
 
   const showDropdown = searchFocused;
   const showPopular = searchFocused && searchQuery.length <= 1;
   const showResults = searchFocused && searchQuery.length > 1;
 
-  const handleSelect = (item: (typeof allItems)[0]) => {
-    const path =
-      item.type === "product" ? `/products/${item.id}` : `/combo/${item.id}`;
+  const handleSelect = (item: any) => {
+    const path = item.slug ? `/products/${item.slug}` : `/products/${item.id}`;
     navigate(path);
     setSearchQuery("");
     setSearchFocused(false);
@@ -87,14 +82,25 @@ export function Navbar() {
     setMobileSearchOpen(false);
   }, [location.pathname]);
 
-  const mobileSearchResults =
-    mobileSearchQuery.length > 1
-      ? allItems
-          .filter((i) =>
-            i.name.toLowerCase().includes(mobileSearchQuery.toLowerCase()),
-          )
-          .slice(0, 6)
-      : [];
+  // Debounced search via API
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (searchQuery.length < 2) {
+      setApiResults([]);
+      return;
+    }
+    debounceRef.current = setTimeout(() => {
+      productApi
+        .search({ q: searchQuery, size: 6 })
+        .then((r) => setApiResults(r.data))
+        .catch(() => {});
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery]);
+
+  const mobileSearchResults = mobileSearchQuery.length > 1 ? apiResults : [];
 
   const showMobileDropdown = mobileSearchOpen;
   const showMobilePopular = mobileSearchOpen && mobileSearchQuery.length <= 1;
