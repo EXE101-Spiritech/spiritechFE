@@ -192,9 +192,8 @@ export interface AddItemResponse {
 
 // ── Checkout ───────────────────────────────────────────────────────────────
 export interface ShippingAddress {
-  street: string;
+  line1: string;
   city: string;
-  district: string;
 }
 
 export interface BuyerInfo {
@@ -209,7 +208,7 @@ export interface PlaceOrderReq {
   cart_id: string;
   cart_version: number;
   payment_method: string;
-  shipping_vnd: number;
+  shipping_vnd?: number;
   shipping_address: ShippingAddress;
   buyer: BuyerInfo;
   coupon_code?: string;

@@ -13,6 +13,11 @@ export default function Cart() {
   const grandTotal = totalPrice + shipping;
 
   const handleCheckout = () => {
+    if (!isLoggedIn) {
+      navigate("/login?redirect=/cart");
+      return;
+    }
+    if (items.length === 0) return;
     navigate("/checkout");
   };
 
