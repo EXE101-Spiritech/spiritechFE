@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X, Package, Search } from "lucide-react";
-import { productApi } from "@/features/products/api";
 import { adminApi } from "@/features/admin/api";
 
 interface ComboItem {
@@ -8,6 +7,7 @@ interface ComboItem {
   name: string;
   description: string;
   image: string;
+  images?: string[];
   price: number;
   originalPrice?: number;
   status: string;
@@ -16,7 +16,7 @@ interface ComboItem {
 const EMPTY_FORM = {
   name: "",
   description: "",
-  image: "",
+  images: [] as string[],
   price: 0,
   originalPrice: 0,
   status: "active" as const,
@@ -37,33 +37,26 @@ export default function AdminCombo() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [imageUrl, setImageUrl] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
-    productApi
-      .list({ limit: 100 })
-      .then(async (r) => {
-        // Fetch detail for each product to check is_combo field
-        // (list endpoint doesn't return is_combo)
-        const results = await Promise.allSettled(
-          r.data.map((p: any) => productApi.get(p.slug)),
+    adminApi
+      .listProducts({ size: 100 })
+      .then((r) => {
+        setCombos(
+          r.data
+            .filter((p: any) => p.is_combo)
+            .map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              description: p.description || "",
+              image: p.images?.[0] || "",
+              price: p.base_price_vnd,
+              originalPrice: p.combo_original_price_vnd,
+              status: p.status,
+            })),
         );
-        const comboItems: ComboItem[] = [];
-        for (const result of results) {
-          if (result.status === "fulfilled" && result.value.is_combo) {
-            const d = result.value;
-            comboItems.push({
-              id: d.id,
-              name: d.name,
-              description: d.description || "",
-              image: d.images?.[0] || "",
-              price: d.base_price_vnd,
-              originalPrice: d.combo_original_price_vnd,
-              status: d.status,
-            });
-          }
-        }
-        setCombos(comboItems);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -80,7 +73,7 @@ export default function AdminCombo() {
     setForm({
       name: c.name,
       description: c.description,
-      image: c.image,
+      images: c.images || (c.image ? [c.image] : []),
       price: c.price,
       originalPrice: c.originalPrice || 0,
       status: c.status as any,
@@ -96,51 +89,53 @@ export default function AdminCombo() {
       name: form.name,
       description: form.description || undefined,
       base_price_vnd: form.price,
-      images: form.image ? [form.image] : [],
+      images: form.images || [],
       is_combo: true,
       combo_original_price_vnd:
         form.originalPrice > 0 ? form.originalPrice : undefined,
       status: form.status,
     };
 
-    if (editingId) {
-      await adminApi.updateProduct(editingId, data).catch(() => {});
-      setCombos((prev) =>
-        prev.map((c) =>
-          c.id === editingId
-            ? {
-                ...c,
-                name: data.name,
-                description: data.description || "",
-                image: data.images?.[0] || "",
-                price: data.base_price_vnd,
-                originalPrice: data.combo_original_price_vnd,
-                status: data.status!,
-              }
-            : c,
-        ),
-      );
-    } else {
-      adminApi
-        .createProduct(data)
-        .then((res: any) => {
-          const newId = res.product_id || slug;
-          setCombos((prev) => [
-            ...prev,
-            {
-              id: newId,
-              name: form.name,
-              description: form.description,
-              image: form.image,
-              price: form.price,
-              originalPrice: form.originalPrice || undefined,
-              status: form.status,
-            },
-          ]);
-        })
-        .catch(() => {});
+    try {
+      if (editingId) {
+        await adminApi.updateProduct(editingId, data);
+        setCombos((prev) =>
+          prev.map((c) =>
+            c.id === editingId
+              ? {
+                  ...c,
+                  name: data.name,
+                  description: data.description || "",
+                  images: data.images || [],
+                  image: data.images?.[0] || "",
+                  price: data.base_price_vnd,
+                  originalPrice: data.combo_original_price_vnd,
+                  status: data.status!,
+                }
+              : c,
+          ),
+        );
+      } else {
+        const res = await adminApi.createProduct(data);
+        const newId = res.product_id || slug;
+        setCombos((prev) => [
+          ...prev,
+          {
+            id: newId,
+            name: form.name,
+            description: form.description,
+            images: form.images || [],
+            image: form.images?.[0] || "",
+            price: form.price,
+            originalPrice: form.originalPrice || undefined,
+            status: form.status,
+          },
+        ]);
+      }
+      setModalOpen(false);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Loi tao combo. Vui long thu lai.");
     }
-    setModalOpen(false);
   };
 
   const handleDelete = (id: string) => {
@@ -357,67 +352,36 @@ export default function AdminCombo() {
                 <label className="block text-sm text-gray-700 mb-1">
                   Hình ảnh
                 </label>
-                <div className="flex items-center gap-3">
-                  {form.image ? (
-                    <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
-                      <img
-                        src={form.image}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        onClick={() =>
-                          setForm((f: any) => ({ ...f, image: "" }))
-                        }
-                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
-                      >
-                        X
-                      </button>
+                <div className="flex flex-wrap gap-3 mb-3">
+                  {(form.images || []).map((url: string, i: number) => (
+                    <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <button onClick={() => setForm((f: any) => ({ ...f, images: f.images.filter((_: any, j: number) => j !== i) }))}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs hover:bg-red-600">X</button>
                     </div>
-                  ) : (
-                    <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
-                      Chưa có ảnh
-                    </div>
-                  )}
-                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                    Tải ảnh lên
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
+                  ))}
+                  <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs flex-shrink-0 cursor-pointer hover:bg-gray-50 relative">
+                    <span>+</span>
+                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         try {
                           const result = await adminApi.uploadImage(file);
-                          setForm((f: any) => ({ ...f, image: result.url }));
-                        } catch {
-                          alert("Tải ảnh thất bại. Vui lòng thử lại.");
-                        }
-                      }}
-                    />
-                  </label>
-                  <input
-                    value={form.image}
-                    onChange={(e) =>
-                      setForm((f: any) => ({ ...f, image: e.target.value }))
-                    }
-                    className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
-                    placeholder="Hoặc nhập URL trực tiếp..."
-                  />
+                          setForm((f: any) => ({ ...f, images: [...(f.images || []), result.url] }));
+                        } catch { alert("Tải ảnh thất bại."); }
+                        e.target.value = "";
+                      }} />
+                  </div>
+                  <div className="flex-1 min-w-[200px]">
+                    <div className="flex gap-2">
+                      <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)}
+                        placeholder="Hoặc nhập URL..."
+                        className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none" />
+                      <button onClick={() => { if (imageUrl) { setForm((f: any) => ({ ...f, images: [...(f.images || []), imageUrl] })); setImageUrl(""); } }}
+                        className="px-3 py-2 rounded-xl text-white text-sm font-medium" style={{ background: "#cc323f" }}>Thêm</button>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div>

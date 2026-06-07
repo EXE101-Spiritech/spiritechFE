@@ -12,11 +12,6 @@ import { formatCurrency } from "../data";
 import { productApi } from "@/features/products/api";
 import { useCart } from "../context/CartContext";
 import { QuickCheckoutModal } from "../components/QuickCheckoutModal";
-import nhangImage from "figma:asset/b2c37b674ec7f7c6335108a122aa3526e2a6cfe3.png";
-import denLyImage from "figma:asset/42798c95181dc052ceac12cdaa0a58f3d4c1406f.png";
-import luHuongImage from "figma:asset/23ed9670385e74f09addd804528ecb4bee074c94.png";
-import denCayLonImage from "figma:asset/df97bc4cd293cebf88ba1d247ecb017492bcdad0.png";
-import denCayNhoImage from "figma:asset/eb2fc9a0a51e17243df477cea736c858af36d4da.png";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -129,19 +124,7 @@ export default function ProductDetail() {
           <div>
             <div className="relative bg-white rounded-2xl overflow-hidden shadow-sm mb-3 h-80 lg:h-96">
               <img
-                src={
-                  product.id === "p1"
-                    ? nhangImage
-                    : product.id === "p2"
-                      ? denLyImage
-                      : product.id === "p3"
-                        ? luHuongImage
-                        : product.id === "p4"
-                          ? denCayLonImage
-                          : product.id === "p5"
-                            ? denCayNhoImage
-                            : product.images[activeImg]
-                }
+                src={product.images[activeImg]}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
@@ -311,7 +294,6 @@ export default function ProductDetail() {
               <ul className="space-y-1.5">
                 {[
                   "Chất liệu thiên nhiên, an toàn",
-                  "Đúng phong tục truyền thống",
                   "Đóng gói cẩn thận, giao nhanh",
                   "Hàng chính hãng 100%",
                 ].map((feat, i) => (
@@ -422,19 +404,7 @@ export default function ProductDetail() {
                 >
                   <div className="relative h-36 overflow-hidden">
                     <img
-                      src={
-                        p.id === "p1"
-                          ? nhangImage
-                          : p.id === "p2"
-                            ? denLyImage
-                            : p.id === "p3"
-                              ? luHuongImage
-                              : p.id === "p4"
-                                ? denCayLonImage
-                                : p.id === "p5"
-                                  ? denCayNhoImage
-                                  : p.image
-                      }
+                      src={p.image}
                       alt={p.name}
                       className="w-full h-full object-contain scale-[1.08] group-hover:scale-[1.13] transition-transform duration-500"
                     />

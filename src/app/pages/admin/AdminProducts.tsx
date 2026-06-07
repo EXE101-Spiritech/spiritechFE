@@ -12,16 +12,41 @@ interface AdminProduct {
   stock: number;
   status: "active" | "hidden";
   image: string;
+  images?: string[];
   description: string;
 }
 
 const toAdminProducts = (): AdminProduct[] => [];
 
+const VIETNAMESE_MAP: Record<string, string> = {
+  'à': 'a', 'á': 'a', 'ạ': 'a', 'ả': 'a', 'ã': 'a',
+  'â': 'a', 'ấ': 'a', 'ầ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ậ': 'a',
+  'ă': 'a', 'ắ': 'a', 'ằ': 'a', 'ẳ': 'a', 'ẵ': 'a', 'ặ': 'a',
+  'è': 'e', 'é': 'e', 'ẹ': 'e', 'ẻ': 'e', 'ẽ': 'e',
+  'ê': 'e', 'ế': 'e', 'ề': 'e', 'ể': 'e', 'ễ': 'e', 'ệ': 'e',
+  'ì': 'i', 'í': 'i', 'ị': 'i', 'ỉ': 'i', 'ĩ': 'i',
+  'ò': 'o', 'ó': 'o', 'ọ': 'o', 'ỏ': 'o', 'õ': 'o',
+  'ô': 'o', 'ố': 'o', 'ồ': 'o', 'ổ': 'o', 'ỗ': 'o', 'ộ': 'o',
+  'ơ': 'o', 'ớ': 'o', 'ờ': 'o', 'ở': 'o', 'ỡ': 'o', 'ợ': 'o',
+  'ù': 'u', 'ú': 'u', 'ụ': 'u', 'ủ': 'u', 'ũ': 'u',
+  'ư': 'u', 'ứ': 'u', 'ừ': 'u', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
+  'ỳ': 'y', 'ý': 'y', 'ỵ': 'y', 'ỷ': 'y', 'ỹ': 'y',
+  'đ': 'd',
+};
+
+function makeSlug(text: string): string {
+  let s = text.toLowerCase();
+  for (const [char, ascii] of Object.entries(VIETNAMESE_MAP)) {
+    s = s.replaceAll(char, ascii);
+  }
+  return s.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+}
+
 const EMPTY_FORM = {
   name: "",
   price: 0,
   status: "active" as const,
-  image: "",
+  images: [] as string[],
   description: "",
 };
 
@@ -72,6 +97,7 @@ export default function AdminProducts() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<any>(EMPTY_FORM);
+  const [imageUrl, setImageUrl] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const allCats = ["Tất cả", ...categories.map((c) => c.Name)];
@@ -94,7 +120,7 @@ export default function AdminProducts() {
       name: p.name,
       price: p.price,
       status: p.status,
-      image: p.image,
+      images: p.images || (p.image ? [p.image] : []),
       description: p.description,
     });
     setModalOpen(true);
@@ -103,18 +129,14 @@ export default function AdminProducts() {
   const handleSave = async () => {
     if (!form.name.trim() || !form.price) return;
     if (editingId) {
-      const slug = form.name
-        .toLowerCase()
-        .replace(/\u0111/g, "d")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
+      const slug = makeSlug(form.name);
       adminApi
         .updateProduct(editingId || "", {
           slug,
           name: form.name,
           description: form.description || undefined,
           base_price_vnd: form.price,
-          images: form.image ? [form.image] : [],
+          images: form.images || [],
           status: form.status,
         })
         .catch(() => {});
@@ -126,16 +148,13 @@ export default function AdminProducts() {
         ),
       );
     } else {
-      const slug = form.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
+      const slug = makeSlug(form.name);
       adminApi
         .createProduct({
           slug,
           name: form.name,
           base_price_vnd: form.price,
-          images: form.image ? [form.image] : [],
+          images: form.images || [],
         })
         .then((res: any) => {
           const newId = res.slug || res.product_id || slug;
@@ -409,59 +428,36 @@ export default function AdminProducts() {
                 <label className="block text-sm text-gray-700 mb-1">
                   Hình ảnh sản phẩm
                 </label>
-                <div className="flex items-center gap-3">
-                  {form.image ? (
-                    <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
-                      <img
-                        src={form.image}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        onClick={() =>
-                          setForm((f: any) => ({ ...f, image: "" }))
-                        }
-                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs hover:bg-red-600"
-                      >
-                        X
-                      </button>
+                <div className="flex flex-wrap gap-3 mb-3">
+                  {(form.images || []).map((url: string, i: number) => (
+                    <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <button onClick={() => setForm((f: any) => ({ ...f, images: f.images.filter((_: any, j: number) => j !== i) }))}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs hover:bg-red-600">X</button>
                     </div>
-                  ) : (
-                    <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
-                      Chưa có ảnh
-                    </div>
-                  )}
-                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                    Tải ảnh lên
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
+                  ))}
+                  <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs flex-shrink-0 cursor-pointer hover:bg-gray-50 relative">
+                    <span>+</span>
+                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         try {
                           const result = await adminApi.uploadImage(file);
-                          setForm((f: any) => ({ ...f, image: result.url }));
-                        } catch {
-                          alert("Tải ảnh thất bại. Vui lòng thử lại.");
-                        }
-                      }}
-                    />
-                  </label>
+                          setForm((f: any) => ({ ...f, images: [...(f.images || []), result.url] }));
+                        } catch { alert("Tải ảnh thất bại."); }
+                        e.target.value = "";
+                      }} />
+                  </div>
+                  <div className="flex-1 min-w-[200px]">
+                    <div className="flex gap-2">
+                      <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)}
+                        placeholder="Hoặc nhập URL..."
+                        className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none" />
+                      <button onClick={() => { if (imageUrl) { setForm((f: any) => ({ ...f, images: [...(f.images || []), imageUrl] })); setImageUrl(""); } }}
+                        className="px-3 py-2 rounded-xl text-white text-sm font-medium" style={{ background: "#cc323f" }}>Thêm</button>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div>

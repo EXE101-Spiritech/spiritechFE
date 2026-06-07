@@ -16,7 +16,6 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
-        "figma:asset": path.resolve(__dirname, "./src/assets"),
       },
     },
     assetsInclude: ["**/*.svg", "**/*.csv"],

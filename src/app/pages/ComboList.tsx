@@ -3,8 +3,6 @@ import { Link, useSearchParams } from "react-router";
 import { Star } from "lucide-react";
 import { formatCurrency } from "../data";
 import { comboApi } from "@/features/combos/api";
-import exampleImage from "figma:asset/e5cf50079f7038348babb7662b17fe84a7e6152f.png";
-
 function StarRating({ rating }: { rating: number }) {
   return (
     <div className="flex gap-0.5">
@@ -40,18 +38,17 @@ export default function ComboList() {
     ? apiCombos.map((c) => ({
         ...c,
         id: c.slug,
-        productCount: c.product_count || 0,
-        price: 0,
-        originalPrice: undefined,
-        image: c.banner_url || "",
-        images: [c.banner_url || ""],
-        description: c.description,
+        price: c.base_price_vnd || 0,
+        originalPrice: c.combo_original_price_vnd || undefined,
+        image: c.images?.[0] || "",
+        images: c.images || [],
+        description: c.description || "",
         items: [],
         occasion: "",
         rating: 4.5,
         reviews: 0,
-        badge: undefined,
-        inStock: true,
+        badge: c.is_combo ? "Tiết kiệm" : undefined,
+        inStock: c.status === "active",
         usageGuide: "",
       }))
     : [];
@@ -168,7 +165,7 @@ export default function ComboList() {
               >
                 <div className="relative overflow-hidden h-56">
                   <img
-                    src={exampleImage}
+                    src={combo.image || ""}
                     alt={combo.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />

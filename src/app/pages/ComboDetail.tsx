@@ -13,8 +13,6 @@ import { formatCurrency } from "../data";
 import { comboApi } from "@/features/combos/api";
 import { useCart } from "../context/CartContext";
 import { QuickCheckoutModal } from "../components/QuickCheckoutModal";
-import comboCoverImage from "figma:asset/e5cf50079f7038348babb7662b17fe84a7e6152f.png";
-
 export default function ComboDetail() {
   const { id } = useParams<{ id: string }>();
   const { addItem } = useCart();
@@ -34,21 +32,21 @@ export default function ComboDetail() {
     }
   }, [id]);
 
-  // Map API combo to UI expected shape
+  // Map API product to UI expected shape
   const combo = apiCombo
     ? {
         ...apiCombo,
         id: apiCombo.slug,
-        price: apiCombo.total_combo_vnd,
-        originalPrice: apiCombo.total_original_vnd,
-        image: apiCombo.banner_url || "",
-        images: [apiCombo.banner_url || ""],
-        items: apiCombo.products?.map((p: any) => p.name) || [],
+        price: apiCombo.base_price_vnd,
+        originalPrice: apiCombo.combo_original_price_vnd,
+        image: apiCombo.images?.[0] || "",
+        images: apiCombo.images || [],
+        items: [],
         occasion: "",
         rating: 4.5,
         reviews: 0,
-        badge: "Tiết kiệm",
-        inStock: true,
+        badge: apiCombo.is_combo ? "Tiết kiệm" : undefined,
+        inStock: apiCombo.status === "active",
         usageGuide: "",
       }
     : undefined;
@@ -115,8 +113,8 @@ export default function ComboDetail() {
           <div>
             <div className="relative bg-white rounded-2xl overflow-hidden shadow-sm mb-3 h-80 lg:h-96">
               <img
-                src={comboCoverImage}
-                alt=""
+                src={combo.images?.[activeImg] || combo.image || ""}
+                alt={combo.name}
                 className="w-full h-full object-cover"
               />
               {combo.badge && (
@@ -174,8 +172,8 @@ export default function ComboDetail() {
                     }}
                   >
                     <img
-                      src={comboCoverImage}
-                      alt=""
+                      src={img || ""}
+                      alt={combo.name}
                       className="w-full h-full object-cover"
                     />
                   </button>

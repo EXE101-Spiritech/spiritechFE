@@ -114,7 +114,7 @@ export default function About() {
           </p>
           <div className="max-w-3xl mx-auto w-full">
             <img
-              src={teamImage}
+              src={ABOUT_IMG}
               alt="Đội ngũ Góc An Nhiên"
               className="w-full h-auto object-contain"
             />

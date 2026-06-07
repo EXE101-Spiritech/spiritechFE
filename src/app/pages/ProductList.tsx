@@ -3,11 +3,6 @@ import { Link } from "react-router";
 import { Star, SlidersHorizontal, X } from "lucide-react";
 import { formatCurrency } from "../data";
 import { productApi } from "@/features/products/api";
-import nhangImage from "figma:asset/b2c37b674ec7f7c6335108a122aa3526e2a6cfe3.png";
-import denLyImage from "figma:asset/42798c95181dc052ceac12cdaa0a58f3d4c1406f.png";
-import denCayLonImage from "figma:asset/df97bc4cd293cebf88ba1d247ecb017492bcdad0.png";
-import denCayNhoImage from "figma:asset/eb2fc9a0a51e17243df477cea736c858af36d4da.png";
-import luHuongImage from "figma:asset/23ed9670385e74f09addd804528ecb4bee074c94.png";
 
 function StarRating({ rating }: { rating: number }) {
   return (
