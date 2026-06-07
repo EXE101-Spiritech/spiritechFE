@@ -69,7 +69,7 @@ export function Footer() {
                   className="w-4 h-4 mt-0.5 flex-shrink-0"
                   style={{ color: "#e6bb0c" }}
                 />
-                <span>123 Đinh Tiên Hoàng, P. Đa Kao, Q.1, TP.HCM</span>
+                <span>687 Tô Ngọc Vân, Tam Bình, Thủ Đức</span>
               </div>
               <div className="flex items-center gap-3 text-white/60 text-sm">
                 <Phone

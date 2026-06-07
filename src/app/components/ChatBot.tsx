@@ -23,7 +23,15 @@ import { ContentRenderer } from "./ContentRenderer";
 import { Solar } from "lunar-javascript";
 
 // ─── Calendar helpers ────────────────────────────────────────────────────────
-const LUNAR_FESTIVALS: Record<string, { type: string; label: string }> = {
+function getLunarMonthName(m: number): string {
+  return (
+    ["Giêng", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "Chạp"][
+      m - 1
+    ] || String(m)
+  );
+}
+
+const LUNAR_FESTIVALS_MAP: Record<string, { type: string; label: string }> = {
   "1-1": { type: "tet", label: "Mùng 1 Tết" },
   "1-2": { type: "tet", label: "Mùng 2 Tết" },
   "1-3": { type: "tet", label: "Mùng 3 Tết" },
@@ -51,14 +59,6 @@ const CAL_COLORS: Record<string, string> = {
   "mung-1": "#cc323f",
 };
 
-function getLunarMonthName(m: number): string {
-  return (
-    ["Giêng", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "Chạp"][
-      m - 1
-    ] || String(m)
-  );
-}
-
 function getRitual(
   yr: number,
   mo: number,
@@ -70,7 +70,7 @@ function getRitual(
   const lDay = lunar.getDay();
 
   const festKey = `${lMonth}-${lDay}`;
-  const festival = LUNAR_FESTIVALS[festKey];
+  const festival = LUNAR_FESTIVALS_MAP[festKey];
   if (festival) return festival;
 
   if (lDay === 15)
