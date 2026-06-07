@@ -178,6 +178,21 @@ export const adminApi = {
 
   // ── Combos (Admin) ─────────────────────────────────────────────────────────
 
+  /** List combos (admin, paginated) */
+  listCombos: (params?: {
+    page?: number;
+    size?: number;
+    category_id?: string;
+  }) =>
+    axiosClient
+      .get<{
+        data: any[];
+        page: number;
+        size: number;
+        total: number;
+      }>("/admin/combos", { params })
+      .then((r) => r.data),
+
   /** Create combo */
   createCombo: (data: ComboFormData) =>
     axiosClient.post("/admin/combos", data).then((r) => r.data),
@@ -190,14 +205,15 @@ export const adminApi = {
   deleteCombo: (id: string) => axiosClient.delete(`/admin/combos/${id}`),
   // ── Products (Admin) ───────────────────────────────────────────────────────
 
-
   /** List all products (admin, paginated) */
   listProducts: (params?: { status?: string; page?: number; size?: number }) =>
     axiosClient
-      .get<{ data: any[]; page: number; size: number; total: number }>(
-        "/admin/products",
-        { params },
-      )
+      .get<{
+        data: any[];
+        page: number;
+        size: number;
+        total: number;
+      }>("/admin/products", { params })
       .then((r) => r.data),
   /** Create product */
   createProduct: (data: CreateProductReq) =>
@@ -219,10 +235,11 @@ export const adminApi = {
   /** Update stock quantity */
   updateStock: (productId: string, quantity: number) =>
     axiosClient
-      .put<{ product_id: string; quantity: number; updated: boolean }>(
-        `/admin/products/${productId}/stock`,
-        { quantity },
-      )
+      .put<{
+        product_id: string;
+        quantity: number;
+        updated: boolean;
+      }>(`/admin/products/${productId}/stock`, { quantity })
       .then((r) => r.data),
 
   /** Upload image */

@@ -1,24 +1,27 @@
-import { productApi } from "@/features/products/api";
-
-// Combos are products with is_combo: true
-// Since the list endpoint doesn't return is_combo, fetch details to detect combos
+import axiosClient from "@/shared/api/axiosClient";
+import type { ProductListResponse } from "@/shared/types";
 
 export const comboApi = {
-  /** List combos by fetching product details and filtering for is_combo */
-  list: async () => {
-    const list = await productApi.list({ limit: 100 });
-    const results = await Promise.allSettled(
-      list.data.map((p: any) => productApi.get(p.slug)),
-    );
-    const combos: any[] = [];
-    for (const result of results) {
-      if (result.status === "fulfilled" && result.value.is_combo) {
-        combos.push(result.value);
-      }
-    }
-    return combos;
-  },
+  /** List combos using dedicated endpoint */
+  list: (params?: {
+    page?: number;
+    size?: number;
+    category_id?: string;
+    min_price?: number;
+    max_price?: number;
+    q?: string;
+  }) =>
+    axiosClient
+      .get<ProductListResponse>("/v1/combos", { params })
+      .then((r) => r.data),
+
+  /** Search combos by keyword (matches slug, name) */
+  search: (params: { q: string; page?: number; size?: number }) =>
+    axiosClient
+      .get<ProductListResponse>("/v1/combos", { params })
+      .then((r) => r.data),
 
   /** Get combo detail — uses products API by slug */
-  get: (slug: string) => productApi.get(slug),
+  get: (slug: string) =>
+    axiosClient.get<any>(`/v1/products/${slug}`).then((r) => r.data),
 };

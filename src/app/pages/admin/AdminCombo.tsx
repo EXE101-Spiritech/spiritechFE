@@ -42,20 +42,18 @@ export default function AdminCombo() {
 
   useEffect(() => {
     adminApi
-      .listProducts({ size: 100 })
+      .listCombos({ size: 100 })
       .then((r) => {
         setCombos(
-          r.data
-            .filter((p: any) => p.is_combo)
-            .map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              description: p.description || "",
-              image: p.images?.[0] || "",
-              price: p.base_price_vnd,
-              originalPrice: p.combo_original_price_vnd,
-              status: p.status,
-            })),
+          r.data.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description || "",
+            image: p.images?.[0] || "",
+            price: p.base_price_vnd,
+            originalPrice: p.combo_original_price_vnd,
+            status: p.status,
+          })),
         );
       })
       .catch(() => {})
@@ -98,7 +96,7 @@ export default function AdminCombo() {
 
     try {
       if (editingId) {
-        await adminApi.updateProduct(editingId, data);
+        await adminApi.updateCombo(editingId, data);
         setCombos((prev) =>
           prev.map((c) =>
             c.id === editingId
@@ -116,8 +114,8 @@ export default function AdminCombo() {
           ),
         );
       } else {
-        const res = await adminApi.createProduct(data);
-        const newId = res.product_id || slug;
+        const res = await adminApi.createCombo(data as any);
+        const newId = res.product_id || res.id || slug;
         setCombos((prev) => [
           ...prev,
           {
@@ -139,7 +137,7 @@ export default function AdminCombo() {
   };
 
   const handleDelete = (id: string) => {
-    adminApi.deleteProduct(id).catch(() => {});
+    adminApi.deleteCombo(id).catch(() => {});
     setCombos((prev) => prev.filter((c) => c.id !== id));
     setDeleteId(null);
   };
@@ -354,32 +352,75 @@ export default function AdminCombo() {
                 </label>
                 <div className="flex flex-wrap gap-3 mb-3">
                   {(form.images || []).map((url: string, i: number) => (
-                    <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                      <button onClick={() => setForm((f: any) => ({ ...f, images: f.images.filter((_: any, j: number) => j !== i) }))}
-                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs hover:bg-red-600">X</button>
+                    <div
+                      key={i}
+                      className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0"
+                    >
+                      <img
+                        src={url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        onClick={() =>
+                          setForm((f: any) => ({
+                            ...f,
+                            images: f.images.filter(
+                              (_: any, j: number) => j !== i,
+                            ),
+                          }))
+                        }
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        X
+                      </button>
                     </div>
                   ))}
                   <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs flex-shrink-0 cursor-pointer hover:bg-gray-50 relative">
                     <span>+</span>
-                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         try {
                           const result = await adminApi.uploadImage(file);
-                          setForm((f: any) => ({ ...f, images: [...(f.images || []), result.url] }));
-                        } catch { alert("Tải ảnh thất bại."); }
+                          setForm((f: any) => ({
+                            ...f,
+                            images: [...(f.images || []), result.url],
+                          }));
+                        } catch {
+                          alert("Tải ảnh thất bại.");
+                        }
                         e.target.value = "";
-                      }} />
+                      }}
+                    />
                   </div>
                   <div className="flex-1 min-w-[200px]">
                     <div className="flex gap-2">
-                      <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)}
+                      <input
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
                         placeholder="Hoặc nhập URL..."
-                        className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none" />
-                      <button onClick={() => { if (imageUrl) { setForm((f: any) => ({ ...f, images: [...(f.images || []), imageUrl] })); setImageUrl(""); } }}
-                        className="px-3 py-2 rounded-xl text-white text-sm font-medium" style={{ background: "#cc323f" }}>Thêm</button>
+                        className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none"
+                      />
+                      <button
+                        onClick={() => {
+                          if (imageUrl) {
+                            setForm((f: any) => ({
+                              ...f,
+                              images: [...(f.images || []), imageUrl],
+                            }));
+                            setImageUrl("");
+                          }
+                        }}
+                        className="px-3 py-2 rounded-xl text-white text-sm font-medium"
+                        style={{ background: "#cc323f" }}
+                      >
+                        Thêm
+                      </button>
                     </div>
                   </div>
                 </div>

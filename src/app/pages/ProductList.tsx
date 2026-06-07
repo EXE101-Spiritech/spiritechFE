@@ -17,19 +17,32 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
+const PAGE_SIZE = 20;
+
 export default function ProductList() {
   const [showFilter, setShowFilter] = useState(false);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000000]);
   const [sortBy, setSortBy] = useState("popular");
   const [apiProducts, setApiProducts] = useState<any[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = (p: number) => {
+    setLoading(true);
     productApi
-      .list({ limit: 100 })
-      .then((r) => setApiProducts(r.data))
+      .list({ page: p, size: PAGE_SIZE })
+      .then((r) => {
+        setApiProducts(r.data);
+        setTotal(r.total);
+        setPage(p);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load(1);
   }, []);
 
   const displayProducts = apiProducts
@@ -91,13 +104,10 @@ export default function ProductList() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
         {/* Toolbar */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-gray-500 text-sm">
-            Hiển thị{" "}
-            <strong className="text-gray-800">{filtered.length}</strong> sản
-            phẩm
+            Hiển thị <strong className="text-gray-800">{total}</strong> sản phẩm
           </p>
           <div className="flex items-center gap-3">
             <select
@@ -259,6 +269,51 @@ export default function ProductList() {
                 </div>
               </Link>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {total > PAGE_SIZE && (
+          <div className="flex justify-center items-center gap-2 mt-8">
+            <button
+              disabled={page <= 1}
+              onClick={() => load(page - 1)}
+              className="px-4 py-2 rounded-lg text-sm border transition-colors disabled:opacity-30"
+              style={{
+                borderColor: "#e2e8f0",
+                color: page <= 1 ? "#94a3b8" : "#334155",
+              }}
+            >
+              Trước
+            </button>
+            {Array.from(
+              { length: Math.ceil(total / PAGE_SIZE) },
+              (_, i) => i + 1,
+            ).map((p) => (
+              <button
+                key={p}
+                onClick={() => load(p)}
+                className="w-9 h-9 rounded-lg text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: p === page ? "#cc323f" : "transparent",
+                  color: p === page ? "white" : "#334155",
+                }}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              disabled={page >= Math.ceil(total / PAGE_SIZE)}
+              onClick={() => load(page + 1)}
+              className="px-4 py-2 rounded-lg text-sm border transition-colors disabled:opacity-30"
+              style={{
+                borderColor: "#e2e8f0",
+                color:
+                  page >= Math.ceil(total / PAGE_SIZE) ? "#94a3b8" : "#334155",
+              }}
+            >
+              Sau
+            </button>
           </div>
         )}
       </div>

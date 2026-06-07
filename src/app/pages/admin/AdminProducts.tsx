@@ -19,19 +19,73 @@ interface AdminProduct {
 const toAdminProducts = (): AdminProduct[] => [];
 
 const VIETNAMESE_MAP: Record<string, string> = {
-  'à': 'a', 'á': 'a', 'ạ': 'a', 'ả': 'a', 'ã': 'a',
-  'â': 'a', 'ấ': 'a', 'ầ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ậ': 'a',
-  'ă': 'a', 'ắ': 'a', 'ằ': 'a', 'ẳ': 'a', 'ẵ': 'a', 'ặ': 'a',
-  'è': 'e', 'é': 'e', 'ẹ': 'e', 'ẻ': 'e', 'ẽ': 'e',
-  'ê': 'e', 'ế': 'e', 'ề': 'e', 'ể': 'e', 'ễ': 'e', 'ệ': 'e',
-  'ì': 'i', 'í': 'i', 'ị': 'i', 'ỉ': 'i', 'ĩ': 'i',
-  'ò': 'o', 'ó': 'o', 'ọ': 'o', 'ỏ': 'o', 'õ': 'o',
-  'ô': 'o', 'ố': 'o', 'ồ': 'o', 'ổ': 'o', 'ỗ': 'o', 'ộ': 'o',
-  'ơ': 'o', 'ớ': 'o', 'ờ': 'o', 'ở': 'o', 'ỡ': 'o', 'ợ': 'o',
-  'ù': 'u', 'ú': 'u', 'ụ': 'u', 'ủ': 'u', 'ũ': 'u',
-  'ư': 'u', 'ứ': 'u', 'ừ': 'u', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
-  'ỳ': 'y', 'ý': 'y', 'ỵ': 'y', 'ỷ': 'y', 'ỹ': 'y',
-  'đ': 'd',
+  à: "a",
+  á: "a",
+  ạ: "a",
+  ả: "a",
+  ã: "a",
+  â: "a",
+  ấ: "a",
+  ầ: "a",
+  ẩ: "a",
+  ẫ: "a",
+  ậ: "a",
+  ă: "a",
+  ắ: "a",
+  ằ: "a",
+  ẳ: "a",
+  ẵ: "a",
+  ặ: "a",
+  è: "e",
+  é: "e",
+  ẹ: "e",
+  ẻ: "e",
+  ẽ: "e",
+  ê: "e",
+  ế: "e",
+  ề: "e",
+  ể: "e",
+  ễ: "e",
+  ệ: "e",
+  ì: "i",
+  í: "i",
+  ị: "i",
+  ỉ: "i",
+  ĩ: "i",
+  ò: "o",
+  ó: "o",
+  ọ: "o",
+  ỏ: "o",
+  õ: "o",
+  ô: "o",
+  ố: "o",
+  ồ: "o",
+  ổ: "o",
+  ỗ: "o",
+  ộ: "o",
+  ơ: "o",
+  ớ: "o",
+  ờ: "o",
+  ở: "o",
+  ỡ: "o",
+  ợ: "o",
+  ù: "u",
+  ú: "u",
+  ụ: "u",
+  ủ: "u",
+  ũ: "u",
+  ư: "u",
+  ứ: "u",
+  ừ: "u",
+  ử: "u",
+  ữ: "u",
+  ự: "u",
+  ỳ: "y",
+  ý: "y",
+  ỵ: "y",
+  ỷ: "y",
+  ỹ: "y",
+  đ: "d",
 };
 
 function makeSlug(text: string): string {
@@ -39,7 +93,10 @@ function makeSlug(text: string): string {
   for (const [char, ascii] of Object.entries(VIETNAMESE_MAP)) {
     s = s.replaceAll(char, ascii);
   }
-  return s.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+  return s
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
 }
 
 const EMPTY_FORM = {
@@ -50,35 +107,49 @@ const EMPTY_FORM = {
   description: "",
 };
 
+const ADMIN_PROD_PAGE_SIZE = 20;
+
 export default function AdminProducts() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
 
-  useEffect(() => {
+  const load = (p: number) => {
+    setLoading(true);
     adminApi
-      .listProducts({ size: 100 })
+      .listProducts({ page: p, size: ADMIN_PROD_PAGE_SIZE })
       .then((r) => {
-        const apiProducts = r.data.map((p: any) => ({
-          id: p.slug,
-          productId: p.id,
-          name: p.name,
-          category: p.category_name || p.category || "",
-          price: p.base_price_vnd,
-          stock: p.quantity ?? 0,
+        const apiProducts = r.data.map((prod: any) => ({
+          id: prod.slug,
+          productId: prod.id,
+          name: prod.name,
+          category: prod.category_name || prod.category || "",
+          price: prod.base_price_vnd,
+          stock: prod.quantity ?? 0,
           status:
-            p.status === "active" ? ("active" as const) : ("hidden" as const),
-          image: p.images?.[0] || "",
-          description: p.description || "",
+            prod.status === "active"
+              ? ("active" as const)
+              : ("hidden" as const),
+          image: prod.images?.[0] || "",
+          description: prod.description || "",
         }));
         setProducts(apiProducts);
+        setTotal(r.total);
+        setPage(p);
       })
       .catch(() => {
         setProducts([]);
       })
       .finally(() => setLoading(false));
+  };
 
-    // Fetch real categories
+  useEffect(() => {
+    load(1);
+  }, []);
+
+  useEffect(() => {
     adminApi
       .listCategories()
       .then((cats: any) =>
@@ -354,6 +425,53 @@ export default function AdminProducts() {
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {total > ADMIN_PROD_PAGE_SIZE && (
+          <div className="flex justify-center items-center gap-2 mt-4">
+            <button
+              disabled={page <= 1}
+              onClick={() => load(page - 1)}
+              className="px-3 py-1.5 rounded-lg text-xs border transition-colors disabled:opacity-30"
+              style={{
+                borderColor: "#e2e8f0",
+                color: page <= 1 ? "#94a3b8" : "#334155",
+              }}
+            >
+              Trước
+            </button>
+            {Array.from(
+              { length: Math.ceil(total / ADMIN_PROD_PAGE_SIZE) },
+              (_, i) => i + 1,
+            ).map((p) => (
+              <button
+                key={p}
+                onClick={() => load(p)}
+                className="w-8 h-8 rounded-lg text-xs font-medium transition-colors"
+                style={{
+                  backgroundColor: p === page ? "#cc323f" : "transparent",
+                  color: p === page ? "white" : "#334155",
+                }}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              disabled={page >= Math.ceil(total / ADMIN_PROD_PAGE_SIZE)}
+              onClick={() => load(page + 1)}
+              className="px-3 py-1.5 rounded-lg text-xs border transition-colors disabled:opacity-30"
+              style={{
+                borderColor: "#e2e8f0",
+                color:
+                  page >= Math.ceil(total / ADMIN_PROD_PAGE_SIZE)
+                    ? "#94a3b8"
+                    : "#334155",
+              }}
+            >
+              Sau
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Modal */}
@@ -430,32 +548,75 @@ export default function AdminProducts() {
                 </label>
                 <div className="flex flex-wrap gap-3 mb-3">
                   {(form.images || []).map((url: string, i: number) => (
-                    <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                      <button onClick={() => setForm((f: any) => ({ ...f, images: f.images.filter((_: any, j: number) => j !== i) }))}
-                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs hover:bg-red-600">X</button>
+                    <div
+                      key={i}
+                      className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0"
+                    >
+                      <img
+                        src={url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        onClick={() =>
+                          setForm((f: any) => ({
+                            ...f,
+                            images: f.images.filter(
+                              (_: any, j: number) => j !== i,
+                            ),
+                          }))
+                        }
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        X
+                      </button>
                     </div>
                   ))}
                   <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs flex-shrink-0 cursor-pointer hover:bg-gray-50 relative">
                     <span>+</span>
-                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         try {
                           const result = await adminApi.uploadImage(file);
-                          setForm((f: any) => ({ ...f, images: [...(f.images || []), result.url] }));
-                        } catch { alert("Tải ảnh thất bại."); }
+                          setForm((f: any) => ({
+                            ...f,
+                            images: [...(f.images || []), result.url],
+                          }));
+                        } catch {
+                          alert("Tải ảnh thất bại.");
+                        }
                         e.target.value = "";
-                      }} />
+                      }}
+                    />
                   </div>
                   <div className="flex-1 min-w-[200px]">
                     <div className="flex gap-2">
-                      <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)}
+                      <input
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
                         placeholder="Hoặc nhập URL..."
-                        className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none" />
-                      <button onClick={() => { if (imageUrl) { setForm((f: any) => ({ ...f, images: [...(f.images || []), imageUrl] })); setImageUrl(""); } }}
-                        className="px-3 py-2 rounded-xl text-white text-sm font-medium" style={{ background: "#cc323f" }}>Thêm</button>
+                        className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none"
+                      />
+                      <button
+                        onClick={() => {
+                          if (imageUrl) {
+                            setForm((f: any) => ({
+                              ...f,
+                              images: [...(f.images || []), imageUrl],
+                            }));
+                            setImageUrl("");
+                          }
+                        }}
+                        className="px-3 py-2 rounded-xl text-white text-sm font-medium"
+                        style={{ background: "#cc323f" }}
+                      >
+                        Thêm
+                      </button>
                     </div>
                   </div>
                 </div>

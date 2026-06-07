@@ -73,6 +73,7 @@ export interface ProductListItem {
   images: string[];
   quantity: number;
   status: string;
+  is_combo?: boolean;
   created_at: string;
 }
 

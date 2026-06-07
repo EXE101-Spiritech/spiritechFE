@@ -20,18 +20,31 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
+const PAGE_SIZE = 6;
+
 export default function ComboList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [sortBy, setSortBy] = useState("popular");
   const [apiCombos, setApiCombos] = useState<any[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = (p: number) => {
+    setLoading(true);
     comboApi
-      .list()
-      .then(setApiCombos)
+      .list({ page: p, size: PAGE_SIZE })
+      .then((r) => {
+        setApiCombos(r.data);
+        setTotal(r.total);
+        setPage(p);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load(1);
   }, []);
 
   const displayCombos = apiCombos
@@ -230,6 +243,51 @@ export default function ComboList() {
                 </div>
               </Link>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {total > PAGE_SIZE && (
+          <div className="flex justify-center items-center gap-2 mt-8">
+            <button
+              disabled={page <= 1}
+              onClick={() => load(page - 1)}
+              className="px-4 py-2 rounded-lg text-sm border transition-colors disabled:opacity-30"
+              style={{
+                borderColor: "#e2e8f0",
+                color: page <= 1 ? "#94a3b8" : "#334155",
+              }}
+            >
+              Trước
+            </button>
+            {Array.from(
+              { length: Math.ceil(total / PAGE_SIZE) },
+              (_, i) => i + 1,
+            ).map((p) => (
+              <button
+                key={p}
+                onClick={() => load(p)}
+                className="w-9 h-9 rounded-lg text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: p === page ? "#cc323f" : "transparent",
+                  color: p === page ? "white" : "#334155",
+                }}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              disabled={page >= Math.ceil(total / PAGE_SIZE)}
+              onClick={() => load(page + 1)}
+              className="px-4 py-2 rounded-lg text-sm border transition-colors disabled:opacity-30"
+              style={{
+                borderColor: "#e2e8f0",
+                color:
+                  page >= Math.ceil(total / PAGE_SIZE) ? "#94a3b8" : "#334155",
+              }}
+            >
+              Sau
+            </button>
           </div>
         )}
       </div>

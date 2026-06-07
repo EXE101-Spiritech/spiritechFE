@@ -33,8 +33,8 @@ export default function Home() {
 
   useEffect(() => {
     comboApi
-      .list()
-      .then(setApiCombos)
+      .list({ page: 1, size: 3 })
+      .then((r) => setApiCombos(r.data))
       .catch(() => {});
   }, []);
 
@@ -42,17 +42,17 @@ export default function Home() {
     ? apiCombos.map((c) => ({
         id: c.slug,
         name: c.name,
-        price: c.total_combo_vnd || 0,
-        originalPrice: c.total_original_vnd || undefined,
-        image: c.banner_url || "",
-        images: [c.banner_url || ""],
-        description: c.description,
+        price: c.base_price_vnd || 0,
+        originalPrice: c.combo_original_price_vnd || undefined,
+        image: c.images?.[0] || "",
+        images: c.images || [],
+        description: c.description || "",
         items: [],
         occasion: "",
         rating: 4.5,
         reviews: 0,
         badge: apiCombos.length > 0 ? "Tiết kiệm" : undefined,
-        inStock: true,
+        inStock: c.status === "active",
         usageGuide: "",
       }))
     : null;

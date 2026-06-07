@@ -5,7 +5,7 @@ import {
 } from "@/features/chat/api";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useLocation, Link } from "react-router";
+import { Link } from "react-router";
 import {
   MessageCircle,
   X,
@@ -15,61 +15,97 @@ import {
   Sparkles,
   Phone,
   RotateCcw,
-  ChevronUp,
   Calendar,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { ContentRenderer } from "./ContentRenderer";
+import { Solar } from "lunar-javascript";
 
-// ─── Dữ liệu ngày cúng / lễ ─────────────────────────────────────────────────
-const RITUAL_DAYS: Record<
-  string,
-  { label: string; type: "ram" | "mung1" | "le" | "than_tai" }
-> = {
-  // Tháng Giêng AL 2026
-  "2026-02-07": {
-    label: "Vía Thần Tài (Mùng 10 tháng Giêng)",
-    type: "than_tai",
-  },
-  "2026-02-12": { label: "Rằm tháng Giêng", type: "ram" },
-  // Tháng 2 AL 2026
-  "2026-02-28": { label: "Mùng 1 tháng 2 ÂL", type: "mung1" },
-  "2026-03-14": { label: "Rằm tháng 2 ÂL", type: "ram" },
-  // Tháng 3 AL 2026
-  "2026-03-29": { label: "Mùng 1 tháng 3 ÂL", type: "mung1" },
-  "2026-04-05": { label: "Tiết Thanh Minh", type: "le" },
-  "2026-04-12": { label: "Rằm tháng 3 ÂL", type: "ram" },
-  // Tháng 4 AL 2026
-  "2026-04-27": { label: "Mùng 1 tháng 4 ÂL", type: "mung1" },
-  "2026-05-11": { label: "Rằm tháng 4 ÂL", type: "ram" },
-  // Tháng 5 AL 2026
-  "2026-05-27": { label: "Mùng 1 tháng 5 ÂL", type: "mung1" },
-  "2026-06-05": { label: "Tết Đoan Ng (5/5 ÂL)", type: "le" },
-  "2026-06-11": { label: "Rằm tháng 5 ÂL", type: "ram" },
-  // Tháng 6 AL 2026
-  "2026-06-26": { label: "Mùng 1 tháng 6 ÂL", type: "mung1" },
-  "2026-07-10": { label: "Rằm tháng 6 ÂL", type: "ram" },
-  // Tháng 7 AL 2026
-  "2026-07-26": { label: "Mùng 1 tháng 7 ÂL", type: "mung1" },
-  "2026-08-09": { label: "Rằm tháng 7 ÂL — Lễ Vu Lan", type: "le" },
-  // Tháng 8 AL 2026
-  "2026-08-24": { label: "Mùng 1 tháng 8 ÂL", type: "mung1" },
-  "2026-09-07": { label: "Rằm tháng 8 ÂL — Tết Trung Thu", type: "le" },
-  // Tháng 9 AL 2026
-  "2026-09-22": { label: "Mùng 1 tháng 9 ÂL", type: "mung1" },
-  "2026-10-06": { label: "Rằm tháng 9 ÂL", type: "ram" },
-  // Tháng 10 AL 2026
-  "2026-10-22": { label: "Mùng 1 tháng 10 ÂL", type: "mung1" },
-  "2026-11-05": { label: "Rằm tháng 10 ÂL — Lễ Hạ Nguyên", type: "le" },
-  // Tháng 11 AL 2026
-  "2026-11-21": { label: "Mùng 1 tháng 11 ÂL", type: "mung1" },
-  "2026-12-05": { label: "Rằm tháng 11 ÂL", type: "ram" },
-  // Tháng 12 AL 2026
-  "2026-12-21": { label: "Mùng 1 tháng 12 ÂL", type: "mung1" },
-  "2027-01-04": { label: "Rằm tháng 12 ÂL", type: "ram" },
-  "2027-01-12": { label: "Ông Công Ông Táo (23 tháng Chạp)", type: "le" },
+// ─── Calendar helpers ────────────────────────────────────────────────────────
+const LUNAR_FESTIVALS: Record<string, { type: string; label: string }> = {
+  "1-1": { type: "tet", label: "Mùng 1 Tết" },
+  "1-2": { type: "tet", label: "Mùng 2 Tết" },
+  "1-3": { type: "tet", label: "Mùng 3 Tết" },
+  "1-10": { type: "than-tai", label: "Vía Thần Tài" },
+  "1-15": { type: "nguyen-tieu", label: "Tết Nguyên Tiêu" },
+  "3-10": { type: "hung-vuong", label: "Giỗ Tổ Hùng Vương" },
+  "5-5": { type: "doan-ngo", label: "Tết Đoan Ngọ" },
+  "7-15": { type: "vu-lan", label: "Lễ Vu Lan" },
+  "8-15": { type: "trung-thu", label: "Tết Trung Thu" },
+  "10-15": { type: "ha-nguyen", label: "Tết Hạ Nguyên" },
+  "12-23": { type: "ong-tao", label: "Ông Công Ông Táo" },
 };
+
+const CAL_COLORS: Record<string, string> = {
+  tet: "#dc2626",
+  "than-tai": "#c77d00",
+  "nguyen-tieu": "#7c3aed",
+  "hung-vuong": "#059669",
+  "doan-ngo": "#dc2626",
+  "vu-lan": "#7c3aed",
+  "trung-thu": "#d97706",
+  "ha-nguyen": "#0891b2",
+  "ong-tao": "#92400e",
+  ram: "#1d4ed8",
+  "mung-1": "#cc323f",
+};
+
+function getLunarMonthName(m: number): string {
+  return (
+    ["Giêng", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "Chạp"][
+      m - 1
+    ] || String(m)
+  );
+}
+
+function getRitual(
+  yr: number,
+  mo: number,
+  day: number,
+): { type: string; label: string } | null {
+  const solar = Solar.fromYmd(yr, mo, day);
+  const lunar = solar.getLunar();
+  const lMonth = lunar.getMonth();
+  const lDay = lunar.getDay();
+
+  const festKey = `${lMonth}-${lDay}`;
+  const festival = LUNAR_FESTIVALS[festKey];
+  if (festival) return festival;
+
+  if (lDay === 15)
+    return { type: "ram", label: `Rằm tháng ${getLunarMonthName(lMonth)}` };
+  if (lDay === 1)
+    return {
+      type: "mung-1",
+      label: `Mùng 1 tháng ${getLunarMonthName(lMonth)}`,
+    };
+
+  if (lMonth === 12 && (lDay === 29 || lDay === 30)) {
+    const next = Solar.fromYmd(yr, mo, day).nextDay(1).getLunar();
+    if (next.getMonth() === 1 && next.getDay() === 1)
+      return { type: "giao-thua", label: "Giao Thừa" };
+  }
+
+  return null;
+}
+
+function getUpcoming(
+  count: number = 5,
+): { key: string; type: string; label: string }[] {
+  const today = new Date();
+  const results: { key: string; type: string; label: string }[] = [];
+  for (let i = 0; i < 365 && results.length < count; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    const r = getRitual(d.getFullYear(), d.getMonth() + 1, d.getDate());
+    if (r) {
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      results.push({ key, ...r });
+    }
+  }
+  return results;
+}
 
 interface Message {
   id: string;
@@ -236,25 +272,9 @@ function BubbleText({ text }: { text: string }) {
 }
 
 export function ChatBot() {
-  const location = useLocation();
-
-  // Pages where the calendar popup is allowed
-  const CALENDAR_ALLOWED_PATHS = ["/", "/guide", "/about"];
-  const showCalendar = CALENDAR_ALLOWED_PATHS.some((p) =>
-    p === "/"
-      ? location.pathname === "/"
-      : location.pathname === p || location.pathname.startsWith(p + "/"),
-  );
-
   const { isLoggedIn } = useAuth();
   const [open, setOpen] = useState(false);
   const [guestOpen, setGuestOpen] = useState(false);
-  const [calOpen, setCalOpen] = useState(false);
-  const [calViewDate, setCalViewDate] = useState(new Date());
-  const [hoveredDay, setHoveredDay] = useState<string | null>(null);
-  const [calEditMode, setCalEditMode] = useState(false);
-  const [calInputMo, setCalInputMo] = useState(0);
-  const [calInputYr, setCalInputYr] = useState(0);
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -303,7 +323,9 @@ export function ChatBot() {
   const inputRef = useRef<HTMLInputElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const toggleBtnRef = useRef<HTMLButtonElement>(null);
-  const [scrolled, setScrolled] = useState(false);
+  const [calOpen, setCalOpen] = useState(false);
+  const [calViewDate, setCalViewDate] = useState(new Date());
+  const [hoveredDay, setHoveredDay] = useState<string | null>(null);
 
   useEffect(() => {
     const currentRef = messagesEndRef.current;
@@ -318,14 +340,6 @@ export function ChatBot() {
       currentRef.focus();
     }
   }, [open]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 300);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -417,7 +431,10 @@ export function ChatBot() {
     try {
       localStorage.removeItem(SESSION_KEY);
     } catch {}
-    if (!isLoggedIn) { setMessages([]); return; }
+    if (!isLoggedIn) {
+      setMessages([]);
+      return;
+    }
     createChatSession()
       .then(({ session_id }) => {
         setSessionId(session_id);
@@ -441,24 +458,6 @@ export function ChatBot() {
     <>
       {/* Floating Button */}
       <div className="fixed bottom-14 right-6 z-50 flex flex-col items-end gap-2">
-        {/* Scroll to top — nằm trên cùng của nhóm, luôn hiện khi cuộn > 300px */}
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          aria-label="Lên đầu trang"
-          className="w-14 h-14 rounded-full text-white flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95"
-          style={{
-            backgroundColor: "#902131",
-            opacity: scrolled ? 1 : 0,
-            pointerEvents: scrolled ? "auto" : "none",
-            transform: scrolled
-              ? "translateY(0) scale(1)"
-              : "translateY(8px) scale(0.85)",
-            boxShadow: "0 4px 20px rgba(144,33,49,0.4)",
-          }}
-        >
-          <ChevronUp className="w-6 h-6" />
-        </button>
-
         {!open && (
           <div
             className="bg-white rounded-full px-3 py-1.5 text-xs shadow-lg flex items-center gap-1.5 animate-bounce mt-2"
@@ -494,7 +493,10 @@ export function ChatBot() {
         {/* Calendar toggle */}
         {!calOpen && (
           <button
-            onClick={() => setCalOpen(true)}
+            onClick={() => {
+              setCalOpen(true);
+              setCalViewDate(new Date());
+            }}
             className="w-11 h-11 rounded-full text-white flex items-center justify-center shadow-xl transition-all hover:scale-110 active:scale-95 flex-shrink-0"
             style={{
               background: "linear-gradient(135deg, #cc323f, #e8566a)",
@@ -507,15 +509,14 @@ export function ChatBot() {
         )}
       </div>
 
-      {/* ── Calendar Widget — desktop only ── */}
-      <div className="">
-        {(() => {
+      {/* ── Calendar Popup ── */}
+      {calOpen &&
+        (() => {
           const today = new Date();
-          const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
           const yr = calViewDate.getFullYear();
           const mo = calViewDate.getMonth();
-          const firstDow = new Date(yr, mo, 1).getDay(); // 0=Sun
-          const startOffset = (firstDow + 6) % 7; // Mon-first
+          const firstDow = new Date(yr, mo, 1).getDay();
+          const startOffset = (firstDow + 6) % 7;
           const daysInMonth = new Date(yr, mo + 1, 0).getDate();
           const cells: (number | null)[] = [
             ...Array(startOffset).fill(null),
@@ -523,21 +524,8 @@ export function ChatBot() {
           ];
           while (cells.length % 7 !== 0) cells.push(null);
 
-          const DOW = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-          const MONTH_VI = [
-            "Tháng 1",
-            "Tháng 2",
-            "Tháng 3",
-            "Tháng 4",
-            "Tháng 5",
-            "Tháng 6",
-            "Tháng 7",
-            "Tháng 8",
-            "Tháng 9",
-            "Tháng 10",
-            "Tháng 11",
-            "Tháng 12",
-          ];
+          const dayKey = (day: number) =>
+            `${yr}-${String(mo + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
           const prevMonth = () =>
             setCalViewDate(
@@ -548,410 +536,244 @@ export function ChatBot() {
               (d) => new Date(d.getFullYear(), d.getMonth() + 1, 1),
             );
 
-          const dayKey = (day: number) =>
-            `${yr}-${String(mo + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-          // Collect upcoming ritual days (next 60 days) for the legend list
-          const upcoming = Object.entries(RITUAL_DAYS)
-            .filter(([k]) => k >= todayKey)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .slice(0, 4);
+          const upcoming = getUpcoming(4);
 
           return (
-            <>
-              {/* Calendar popup */}
+            <div
+              className="fixed bottom-2 right-36 z-50"
+              style={{
+                width: "320px",
+                fontFamily: "Be Vietnam Pro, sans-serif",
+              }}
+            >
               <div
-                className="fixed bottom-2 right-28 z-50"
                 style={{
-                  width: "248px",
-                  fontFamily: "Be Vietnam Pro, sans-serif",
+                  borderRadius: "0.75rem",
+                  overflow: "visible",
+                  boxShadow: "0 8px 32px rgba(15,23,42,0.2)",
+                  border: "1px solid rgba(204,50,63,0.18)",
+                  backgroundColor: "white",
                 }}
               >
-                {calOpen && (
-                  <div
+                {/* Header */}
+                <div
+                  className="flex items-center justify-between px-3 py-2"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #3a0e16 0%, #cc323f 100%)",
+                    borderTopLeftRadius: "0.75rem",
+                    borderTopRightRadius: "0.75rem",
+                  }}
+                >
+                  <button
+                    onClick={prevMonth}
+                    className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-white/20 text-white"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <span
                     style={{
-                      borderRadius: "0.75rem",
-                      overflow: "visible",
-                      boxShadow: "0 8px 32px rgba(15,23,42,0.2)",
-                      border: "1px solid rgba(204,50,63,0.18)",
+                      fontSize: "0.85rem",
+                      fontWeight: 700,
+                      color: "white",
                     }}
                   >
-                    {/* Header — drag handle */}
+                    {
+                      [
+                        "Tháng 1",
+                        "Tháng 2",
+                        "Tháng 3",
+                        "Tháng 4",
+                        "Tháng 5",
+                        "Tháng 6",
+                        "Tháng 7",
+                        "Tháng 8",
+                        "Tháng 9",
+                        "Tháng 10",
+                        "Tháng 11",
+                        "Tháng 12",
+                      ][mo]
+                    }{" "}
+                    {yr}
+                  </span>
+                  <button
+                    onClick={nextMonth}
+                    className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-white/20 text-white"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setCalOpen(false)}
+                    className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-white/20 text-white/70"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+
+                {/* DOW */}
+                <div className="grid grid-cols-7 px-2 pt-2">
+                  {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((d, i) => (
                     <div
-                      className="flex items-center justify-between px-3 py-2"
+                      key={d}
+                      className="text-center"
                       style={{
-                        background:
-                          "linear-gradient(135deg, #3a0e16 0%, #cc323f 100%)",
-                        borderTopLeftRadius: "0.75rem",
-                        borderTopRightRadius: "0.75rem",
+                        fontSize: "0.7rem",
+                        fontWeight: 700,
+                        color: i >= 5 ? "#cc323f" : "#94a3b8",
                       }}
                     >
-                      <button
-                        onClick={prevMonth}
-                        className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors text-white flex-shrink-0"
-                      >
-                        <ChevronLeft className="w-3.5 h-3.5" />
-                      </button>
+                      {d}
+                    </div>
+                  ))}
+                </div>
 
-                      {/* Month/Year — click to edit */}
-                      {calEditMode ? (
-                        <div className="flex items-center gap-1 flex-1 justify-center">
-                          <select
-                            value={calInputMo}
-                            onChange={(e) => {
-                              const newMo = Number(e.target.value);
-                              setCalInputMo(newMo);
-                              setCalViewDate(new Date(calInputYr, newMo, 1));
-                            }}
-                            className="rounded px-1 outline-none cursor-pointer"
-                            style={{
-                              fontSize: "0.7rem",
-                              fontWeight: 700,
-                              background: "rgba(255,255,255,0.15)",
-                              color: "white",
-                              border: "1px solid rgba(255,255,255,0.35)",
-                              appearance: "none",
-                              WebkitAppearance: "none",
-                              paddingRight: "4px",
-                              paddingTop: "2px",
-                              paddingBottom: "2px",
-                            }}
-                          >
-                            {[
-                              "T1",
-                              "T2",
-                              "T3",
-                              "T4",
-                              "T5",
-                              "T6",
-                              "T7",
-                              "T8",
-                              "T9",
-                              "T10",
-                              "T11",
-                              "T12",
-                            ].map((m, i) => (
-                              <option
-                                key={i}
-                                value={i}
-                                style={{
-                                  background: "#3a0e16",
-                                  color: "white",
-                                }}
-                              >
-                                {m}
-                              </option>
-                            ))}
-                          </select>
-                          <select
-                            value={calInputYr}
-                            onChange={(e) => {
-                              const newYr = Number(e.target.value);
-                              setCalInputYr(newYr);
-                              setCalViewDate(new Date(newYr, calInputMo, 1));
-                            }}
-                            className="rounded px-1 outline-none cursor-pointer"
-                            style={{
-                              fontSize: "0.7rem",
-                              fontWeight: 700,
-                              background: "rgba(255,255,255,0.15)",
-                              color: "white",
-                              border: "1px solid rgba(255,255,255,0.35)",
-                              appearance: "none",
-                              WebkitAppearance: "none",
-                              paddingRight: "4px",
-                              paddingTop: "2px",
-                              paddingBottom: "2px",
-                            }}
-                          >
-                            {[2024, 2025, 2026, 2027, 2028, 2029, 2030].map(
-                              (y) => (
-                                <option
-                                  key={y}
-                                  value={y}
-                                  style={{
-                                    background: "#3a0e16",
-                                    color: "white",
-                                  }}
-                                >
-                                  {y}
-                                </option>
-                              ),
-                            )}
-                          </select>
-                          <button
-                            onClick={() => setCalEditMode(false)}
-                            className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors text-white flex-shrink-0"
-                            aria-label="Đóng chọn tháng năm"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setCalInputMo(mo);
-                            setCalInputYr(yr);
-                            setCalEditMode(true);
+                {/* Days */}
+                <div
+                  className="grid grid-cols-7 px-2 pb-2"
+                  style={{ gap: "4px 0" }}
+                >
+                  {cells.map((day, idx) => {
+                    if (!day) return <div key={idx} />;
+                    const key = dayKey(day);
+                    const ritual = getRitual(yr, mo + 1, day);
+                    const isToday =
+                      key ===
+                      `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+                    const isHovered = hoveredDay === key;
+
+                    let bg = "transparent";
+                    let textCol = "#1e293b";
+                    let fw = 400;
+
+                    if (ritual) {
+                      const c = CAL_COLORS[ritual.type] || "#1d4ed8";
+                      bg = c;
+                      textCol = "white";
+                      fw = 700;
+                    }
+                    if (isToday) {
+                      bg = "#fef3c7";
+                      textCol = "#92400e";
+                      fw = 700;
+                    }
+
+                    return (
+                      <div
+                        key={key}
+                        className="relative flex items-center justify-center"
+                        style={{ height: "32px" }}
+                      >
+                        <div
+                          onMouseEnter={() => ritual && setHoveredDay(key)}
+                          onMouseLeave={() => setHoveredDay(null)}
+                          className="flex items-center justify-center rounded-full transition-all"
+                          style={{
+                            width: "28px",
+                            height: "28px",
+                            backgroundColor: bg,
+                            cursor: ritual ? "pointer" : "default",
                           }}
-                          className="flex items-center gap-1 rounded px-2 py-0.5 hover:bg-white/15 transition-colors group"
-                          title="Chọn tháng / năm"
                         >
                           <span
                             style={{
-                              fontFamily: "Lora, serif",
-                              fontWeight: 700,
-                              fontSize: "0.8rem",
-                              color: "white",
+                              fontSize: "0.78rem",
+                              fontWeight: fw,
+                              color: textCol,
                             }}
                           >
-                            {MONTH_VI[mo]} {yr}
+                            {day}
                           </span>
-                          <svg
-                            className="w-3 h-3 text-white/60 group-hover:text-white transition-colors"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2.5}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 0l.172.172a2 2 0 010 2.828L12 16H9v-3z"
-                            />
-                          </svg>
-                        </button>
-                      )}
-
-                      <div className="flex items-center gap-0.5 flex-shrink-0">
-                        <button
-                          onClick={nextMonth}
-                          className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors text-white"
-                        >
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setCalOpen(false)}
-                          className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors text-white"
-                          aria-label="Đóng lịch"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Body */}
-                    <div
-                      className="bg-white px-2 pt-2 pb-2"
-                      style={{
-                        borderBottomLeftRadius: "0.75rem",
-                        borderBottomRightRadius: "0.75rem",
-                        overflowX: "visible",
-                      }}
-                    >
-                      {/* DOW row */}
-                      <div className="grid grid-cols-7 mb-0.5">
-                        {DOW.map((d, i) => (
+                        </div>
+                        {/* Tooltip */}
+                        {isHovered && ritual && (
                           <div
-                            key={d}
-                            className="text-center"
+                            className="absolute z-20 pointer-events-none"
                             style={{
-                              fontSize: "0.6rem",
-                              fontWeight: 700,
-                              color: i >= 5 ? "#cc323f" : "#94a3b8",
-                              padding: "2px 0",
+                              bottom: "100%",
+                              left: "50%",
+                              transform: "translateX(-50%)",
+                              marginBottom: "4px",
                             }}
                           >
-                            {d}
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Days grid */}
-                      <div
-                        className="grid grid-cols-7"
-                        style={{ gap: "2px 0" }}
-                      >
-                        {cells.map((day, idx) => {
-                          if (!day) return <div key={idx} />;
-                          const key = dayKey(day);
-                          const ritual = RITUAL_DAYS[key];
-                          const isToday = key === todayKey;
-                          const isPast = key < todayKey;
-                          const isHovered = hoveredDay === key;
-
-                          const COLORS = {
-                            ram: {
-                              solid: "#1d4ed8",
-                              hover: "#1e3a8a",
-                              light: "#dbeafe",
-                            }, // xanh dương — Rằm
-                            mung1: {
-                              solid: "#cc323f",
-                              hover: "#b02030",
-                              light: "#fecaca",
-                            }, // đỏ brand   — Mùng 1
-                            le: {
-                              solid: "#7c3aed",
-                              hover: "#6d28d9",
-                              light: "#ede9fe",
-                            }, // tím        — Lễ lớn
-                            than_tai: {
-                              solid: "#c77d00",
-                              hover: "#a86a00",
-                              light: "#fef3c7",
-                            }, // vàng gold  — Thần Tài
-                          };
-
-                          let bgColor = "transparent";
-                          let textColor = isPast ? "#9ca3af" : "#1e293b";
-                          let borderStyle = "none";
-                          let fontWeight = 400;
-
-                          if (isToday && !ritual) {
-                            bgColor = "#fef3c7";
-                            borderStyle = "2px solid #e6bb0c";
-                            textColor = "#92400e";
-                            fontWeight = 700;
-                          }
-                          if (ritual) {
-                            const c = COLORS[ritual.type];
-                            if (isPast) {
-                              bgColor = c.light;
-                              textColor = "#6b7280";
-                              fontWeight = 500;
-                            } else {
-                              bgColor = isHovered ? c.hover : c.solid;
-                              textColor = "white";
-                              fontWeight = 700;
-                            }
-                          }
-
-                          return (
                             <div
-                              key={key}
-                              className="relative flex items-center justify-center"
-                              style={{ height: "28px" }}
-                              onMouseEnter={() =>
-                                ritual && !isPast && setHoveredDay(key)
-                              }
-                              onMouseLeave={() => setHoveredDay(null)}
-                            >
-                              <div
-                                className="w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-150"
-                                style={{
-                                  backgroundColor: bgColor,
-                                  border: borderStyle,
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    fontSize: "0.7rem",
-                                    fontWeight,
-                                    color: textColor,
-                                    lineHeight: 1,
-                                  }}
-                                >
-                                  {day}
-                                </span>
-                              </div>
-
-                              {/* Tooltip */}
-                              {isHovered && ritual && !isPast && (
-                                <div
-                                  className="absolute z-20 pointer-events-none"
-                                  style={{
-                                    bottom: "calc(100% + 4px)",
-                                    left: "50%",
-                                    transform: "translateX(-50%)",
-                                    whiteSpace: "nowrap",
-                                    backgroundColor: "#1e293b",
-                                    color: "white",
-                                    borderRadius: "6px",
-                                    padding: "3px 8px",
-                                    fontSize: "0.62rem",
-                                    fontWeight: 600,
-                                    boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
-                                  }}
-                                >
-                                  {ritual.label}
-                                  <div
-                                    style={{
-                                      position: "absolute",
-                                      top: "100%",
-                                      left: "50%",
-                                      transform: "translateX(-50%)",
-                                      width: 0,
-                                      height: 0,
-                                      borderLeft: "4px solid transparent",
-                                      borderRight: "4px solid transparent",
-                                      borderTop: "4px solid #1e293b",
-                                    }}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Legend — grid 7 cols để chấm thẳng hàng với lưới lịch */}
-                      <div
-                        className="grid grid-cols-7 w-full mt-2 pt-1.5"
-                        style={{ boxShadow: "inset 0 1px 0 #f1f5f9" }}
-                      >
-                        {[
-                          {
-                            color: "#cc323f",
-                            label: "Mùng 1",
-                            gridColumn: "1 / span 2",
-                          },
-                          {
-                            color: "#1d4ed8",
-                            label: "Rằm",
-                            gridColumn: "3 / span 1",
-                          },
-                          {
-                            color: "#7c3aed",
-                            label: "Ngày lễ",
-                            gridColumn: "4 / span 2",
-                          },
-                          {
-                            color: "#c77d00",
-                            label: "Thần Tài",
-                            gridColumn: "6 / span 2",
-                          },
-                        ].map((l) => (
-                          <div
-                            key={l.label}
-                            className="flex items-center justify-center gap-1"
-                            style={{ gridColumn: l.gridColumn }}
-                          >
-                            <span
-                              className="w-2 h-2 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: l.color }}
-                            />
-                            <span
                               style={{
+                                backgroundColor: "#1e293b",
+                                color: "white",
+                                padding: "4px 8px",
+                                borderRadius: "6px",
                                 fontSize: "0.6rem",
-                                color: "#6b7280",
-                                fontWeight: 500,
                                 whiteSpace: "nowrap",
+                                fontWeight: 600,
                               }}
                             >
-                              {l.label}
-                            </span>
+                              {ritual.label}
+                            </div>
                           </div>
-                        ))}
+                        )}
                       </div>
-                    </div>
+                    );
+                  })}
+                </div>
+
+                {/* Legend & upcoming */}
+                <div
+                  style={{
+                    borderTop: "1px solid #f1f5f9",
+                    padding: "6px 10px",
+                  }}
+                >
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mb-1.5">
+                    {[
+                      { c: "#cc323f", l: "Mùng 1" },
+                      { c: "#1d4ed8", l: "Rằm" },
+                      { c: "#7c3aed", l: "Lễ" },
+                      { c: "#c77d00", l: "Lễ lớn" },
+                    ].map((l) => (
+                      <div key={l.l} className="flex items-center gap-1">
+                        <span
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: l.c }}
+                        />
+                        <span style={{ fontSize: "0.65rem", color: "#6b7280" }}>
+                          {l.l}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>{" "}
-            </>
+                  {upcoming.length > 0 && (
+                    <div>
+                      <p
+                        style={{
+                          fontSize: "0.7rem",
+                          fontWeight: 600,
+                          color: "#64748b",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        Sắp tới:
+                      </p>
+                      {upcoming.map((u) => (
+                        <div key={u.key} className="flex items-center gap-1.5">
+                          <span
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{
+                              backgroundColor: CAL_COLORS[u.type] || "#1d4ed8",
+                            }}
+                          />
+                          <span
+                            style={{ fontSize: "0.7rem", color: "#475569" }}
+                          >
+                            {u.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           );
         })()}
-      </div>
 
       {/* Guest login prompt */}
       {guestOpen && !isLoggedIn && (
