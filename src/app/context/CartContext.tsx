@@ -36,53 +36,48 @@ interface CartContextType {
   totalPrice: number;
 }
 
-const CART_ID_KEY = "spiritech_cart_id";
-
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("spiritech_cart_items");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [cartId, setCartId] = useState<string | null>(() =>
-    localStorage.getItem(CART_ID_KEY),
+    localStorage.getItem("spiritech_cart_id"),
   );
   const [version, setVersion] = useState(1);
   const [loading, setLoading] = useState(false);
   const synced = useRef(false);
 
-  // On mount, if logged in and we have a cart ID, fetch it from server
+  // Save items to localStorage on change
+  useEffect(() => {
+    localStorage.setItem("spiritech_cart_items", JSON.stringify(items));
+  }, [items]);
+
+  // Fetch cart from server on mount (logged in users only)
   useEffect(() => {
     if (synced.current) return;
     synced.current = true;
 
-    if (cartId && getAccessToken()) {
+    if (getAccessToken()) {
       cartApi
-        .get(cartId)
+        .get()
         .then((res) => {
+          setCartId(res.cart_id);
           setVersion(res.version);
+          localStorage.setItem("spiritech_cart_id", res.cart_id);
         })
         .catch(() => {
-          // Cart expired or missing — clear
-          localStorage.removeItem(CART_ID_KEY);
+          localStorage.removeItem("spiritech_cart_id");
           setCartId(null);
         });
     }
-  }, [cartId]);
-
-  // Ensure cart exists on server when user is logged in
-  useEffect(() => {
-    if (!getAccessToken() || cartId) return;
-
-    cartApi
-      .create()
-      .then((res) => {
-        setCartId(res.cart_id);
-        setVersion(res.version);
-        localStorage.setItem(CART_ID_KEY, res.cart_id);
-      })
-      .catch(() => {
-        // Silently fail — cart will be created on next action
-      });
-  }, [cartId]);
+  }, []);
 
   const addItem = useCallback(
     async (
@@ -96,22 +91,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       if (token && item.variantId) {
         // Server-side cart
-        let cid = cartId;
-
-        if (!cid) {
-          const created = await cartApi.create();
-          cid = created.cart_id;
-          setCartId(cid);
-          setVersion(created.version);
-          localStorage.setItem(CART_ID_KEY, cid);
+        await cartApi
+          .addItem({ product_id: item.variantId, quantity: qty })
+          .catch(() => {});
+        const updated = await cartApi.get().catch(() => null);
+        if (updated) {
+          setCartId(updated.cart_id);
+          setVersion(updated.version);
+          localStorage.setItem("spiritech_cart_id", updated.cart_id);
         }
-
-        await cartApi.addItem(cid, {
-          product_id: item.variantId,
-          quantity: qty,
-        });
-        const updated = await cartApi.get(cid);
-        setVersion(updated.version);
       }
 
       // Update local state
@@ -125,19 +113,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return [...prev, { ...item, quantity: qty }];
       });
     },
-    [cartId],
+    [],
   );
 
-  const removeItem = useCallback(
-    async (variantId: string) => {
-      if (cartId && getAccessToken()) {
-        await cartApi.removeItem(cartId, variantId).catch(() => {});
-      }
+  const removeItem = useCallback(async (variantId: string) => {
+    if (getAccessToken()) {
+      await cartApi.removeItem(variantId).catch(() => {});
+    }
 
-      setItems((prev) => prev.filter((i) => i.variantId !== variantId));
-    },
-    [cartId],
-  );
+    setItems((prev) => prev.filter((i) => i.variantId !== variantId));
+  }, []);
 
   const updateQuantity = useCallback(
     async (variantId: string, quantity: number) => {
@@ -145,11 +130,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return removeItem(variantId);
       }
 
-      if (cartId && getAccessToken()) {
+      if (getAccessToken()) {
         await cartApi
-          .addItem(cartId, { product_id: variantId, quantity })
+          .addItem({ product_id: variantId, quantity })
           .catch(() => {});
-        const updated = await cartApi.get(cartId).catch(() => null);
+        const updated = await cartApi.get().catch(() => null);
         if (updated) setVersion(updated.version);
       }
 
@@ -157,11 +142,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         prev.map((i) => (i.variantId === variantId ? { ...i, quantity } : i)),
       );
     },
-    [cartId, removeItem],
+    [removeItem],
   );
 
   const clearCart = useCallback(() => {
     setItems([]);
+    localStorage.removeItem("spiritech_cart_items");
   }, []);
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);

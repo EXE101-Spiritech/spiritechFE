@@ -346,41 +346,24 @@ export default function ProductDetail() {
               </div>
             )}
 
-            <div className="flex gap-3">
-              <button
-                onClick={handleAddToCart}
-                disabled={!product.inStock}
-                className="flex-1 flex items-center justify-center gap-2 border-2 py-3 rounded-xl transition-colors disabled:opacity-40"
-                style={{
-                  borderColor: "#cc323f",
-                  color: "#cc323f",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#fdf4f3";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                <ShoppingCart className="w-5 h-5" />
-                Thêm vào giỏ
-              </button>
-              <button
-                onClick={() => setShowModal(true)}
-                disabled={!product.inStock}
-                className="flex-1 flex items-center justify-center gap-2 text-white py-3 rounded-xl transition-colors disabled:opacity-40"
-                style={{ backgroundColor: "#cc323f" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#ab2534";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "#cc323f";
-                }}
-              >
-                <Zap className="w-5 h-5" />
-                Mua ngay
-              </button>
-            </div>
+            <button
+              onClick={handleAddToCart}
+              disabled={!product.inStock}
+              className="w-full flex items-center justify-center gap-2 border-2 py-3 rounded-xl transition-colors disabled:opacity-40"
+              style={{
+                borderColor: "#cc323f",
+                color: "#cc323f",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#fdf4f3";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
+            >
+              <ShoppingCart className="w-5 h-5" />
+              Thêm vào giỏ
+            </button>
           </div>
         </div>
 

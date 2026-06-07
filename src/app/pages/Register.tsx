@@ -13,6 +13,7 @@ export default function Register() {
   });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function Register() {
       e.email = "Email không hợp lệ";
     if (!form.password || form.password.length < 6)
       e.password = "Mật khẩu tối thiểu 6 ký tự";
+    if (!agreed) e.agreed = "Vui lòng đồng ý với các điều khoản";
     return e;
   };
 
@@ -177,6 +179,61 @@ export default function Register() {
               </div>
               {errors.password && (
                 <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+              )}
+            </div>
+            {/* Agreement checkbox */}
+            <div>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreed}
+                  onChange={(e) => {
+                    setAgreed(e.target.checked);
+                    if (errors.agreed) {
+                      setErrors((prev) => {
+                        const n = { ...prev };
+                        delete n.agreed;
+                        return n;
+                      });
+                    }
+                  }}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#cc323f] focus:ring-[#cc323f]"
+                />
+                <span className="text-sm text-gray-500 leading-relaxed">
+                  Tôi đã đọc và đồng ý với{" "}
+                  <a
+                    href="/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                    style={{ color: "#cc323f", fontWeight: 600 }}
+                  >
+                    Chính sách bảo mật
+                  </a>
+                  {", "}
+                  <a
+                    href="/terms-of-service"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                    style={{ color: "#cc323f", fontWeight: 600 }}
+                  >
+                    Điều khoản dịch vụ
+                  </a>
+                  {" và "}
+                  <a
+                    href="/return-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                    style={{ color: "#cc323f", fontWeight: 600 }}
+                  >
+                    Chính sách đổi trả
+                  </a>
+                </span>
+              </label>
+              {errors.agreed && (
+                <p className="text-red-500 text-xs mt-1">{errors.agreed}</p>
               )}
             </div>
             <button
