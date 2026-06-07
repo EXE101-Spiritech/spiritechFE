@@ -161,10 +161,19 @@ export interface CreateCartReq {
   session_token?: string;
 }
 
+export interface CartItemResponse {
+  product_id: string;
+  name: string;
+  unit_price: number;
+  quantity: number;
+  line_total: number;
+}
+
 export interface CartResponse {
   cart_id: string;
   version: number;
   status: string;
+  items?: CartItemResponse[];
   created_at?: string;
   expires_at?: string;
 }

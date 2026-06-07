@@ -8,17 +8,25 @@ import React, {
 } from "react";
 import { cartApi } from "@/features/cart/api";
 import { getAccessToken } from "@/shared/api/axiosClient";
+import type { CartItemResponse } from "@/shared/types";
 
-// Local cart item — holds both server and client data
+// Local cart item — holds display + server data
 export interface CartItem {
-  id: string;
-  variantId?: string;
+  id: string; // slug (for display/routing)
+  variantId: string; // product_id UUID from server
   type: "product" | "combo";
   name: string;
   price: number;
   image: string;
   quantity: number;
 }
+
+// Metadata cache keyed by product_id — populated when adding items
+type ItemMeta = {
+  slug: string;
+  type: "product" | "combo";
+  image: string;
+};
 
 interface CartContextType {
   items: CartItem[];
@@ -38,46 +46,58 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    try {
-      const saved = localStorage.getItem("spiritech_cart_items");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
+function parseItems(
+  serverItems: CartItemResponse[] | undefined,
+  metaCache: Map<string, ItemMeta>,
+): CartItem[] {
+  if (!serverItems) return [];
+  return serverItems.map((si) => {
+    const meta = metaCache.get(si.product_id);
+    return {
+      id: meta?.slug || si.product_id,
+      variantId: si.product_id,
+      type: meta?.type || "product",
+      name: si.name,
+      price: si.unit_price,
+      image: meta?.image || "",
+      quantity: si.quantity,
+    };
   });
-  const [cartId, setCartId] = useState<string | null>(() =>
-    localStorage.getItem("spiritech_cart_id"),
-  );
+}
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [cartId, setCartId] = useState<string | null>(null);
   const [version, setVersion] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const synced = useRef(false);
+  // Metadata cache: product_id → { slug, type, image }
+  const [metaCache] = useState(() => new Map<string, ItemMeta>());
 
-  // Save items to localStorage on change
-  useEffect(() => {
-    localStorage.setItem("spiritech_cart_items", JSON.stringify(items));
-  }, [items]);
+  const refreshFromServer = useCallback(async () => {
+    if (!getAccessToken()) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const res = await cartApi.get();
+      setCartId(res.cart_id);
+      setVersion(res.version);
+      setItems(parseItems(res.items, metaCache));
+    } catch {
+      setCartId(null);
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [metaCache]);
 
-  // Fetch cart from server on mount (logged in users only)
+  // Fetch cart from server on mount
   useEffect(() => {
     if (synced.current) return;
     synced.current = true;
-
-    if (getAccessToken()) {
-      cartApi
-        .get()
-        .then((res) => {
-          setCartId(res.cart_id);
-          setVersion(res.version);
-          localStorage.setItem("spiritech_cart_id", res.cart_id);
-        })
-        .catch(() => {
-          localStorage.removeItem("spiritech_cart_id");
-          setCartId(null);
-        });
-    }
-  }, []);
+    refreshFromServer();
+  }, [refreshFromServer]);
 
   const addItem = useCallback(
     async (
@@ -88,66 +108,45 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       qty: number = 1,
     ) => {
       const token = getAccessToken();
+      if (!token || !item.variantId) return;
 
-      if (token && item.variantId) {
-        // Server-side cart
-        await cartApi
-          .addItem({ product_id: item.variantId, quantity: qty })
-          .catch(() => {});
-        const updated = await cartApi.get().catch(() => null);
-        if (updated) {
-          setCartId(updated.cart_id);
-          setVersion(updated.version);
-          localStorage.setItem("spiritech_cart_id", updated.cart_id);
-        }
-      }
-
-      // Update local state
-      setItems((prev) => {
-        const existing = prev.find((i) => i.id === item.id);
-        if (existing) {
-          return prev.map((i) =>
-            i.id === item.id ? { ...i, quantity: i.quantity + qty } : i,
-          );
-        }
-        return [...prev, { ...item, quantity: qty }];
+      // Cache display metadata for when we reload from server
+      metaCache.set(item.variantId, {
+        slug: item.id,
+        type: item.type as "product" | "combo",
+        image: item.image,
       });
+
+      await cartApi.addItem({ product_id: item.variantId, quantity: qty });
+      await refreshFromServer();
     },
-    [],
+    [metaCache, refreshFromServer],
   );
 
-  const removeItem = useCallback(async (variantId: string) => {
-    if (getAccessToken()) {
+  const removeItem = useCallback(
+    async (variantId: string) => {
+      if (!getAccessToken()) return;
       await cartApi.removeItem(variantId).catch(() => {});
-    }
-
-    setItems((prev) => prev.filter((i) => i.variantId !== variantId));
-  }, []);
+      await refreshFromServer();
+    },
+    [refreshFromServer],
+  );
 
   const updateQuantity = useCallback(
     async (variantId: string, quantity: number) => {
-      if (quantity <= 0) {
-        return removeItem(variantId);
-      }
+      if (quantity <= 0) return removeItem(variantId);
+      if (!getAccessToken()) return;
 
-      if (getAccessToken()) {
-        await cartApi
-          .addItem({ product_id: variantId, quantity })
-          .catch(() => {});
-        const updated = await cartApi.get().catch(() => null);
-        if (updated) setVersion(updated.version);
-      }
-
-      setItems((prev) =>
-        prev.map((i) => (i.variantId === variantId ? { ...i, quantity } : i)),
-      );
+      await cartApi
+        .addItem({ product_id: variantId, quantity })
+        .catch(() => {});
+      await refreshFromServer();
     },
-    [removeItem],
+    [removeItem, refreshFromServer],
   );
 
   const clearCart = useCallback(() => {
     setItems([]);
-    localStorage.removeItem("spiritech_cart_items");
   }, []);
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);

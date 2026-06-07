@@ -126,7 +126,7 @@ export default function Cart() {
                       </p>
                     </div>
                     <button
-                      onClick={() => removeItem(item.variantId || item.id)}
+                      onClick={() => removeItem(item.variantId)}
                       className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -136,10 +136,7 @@ export default function Cart() {
                     <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
                       <button
                         onClick={() =>
-                          updateQuantity(
-                            item.variantId || item.id,
-                            item.quantity - 1,
-                          )
+                          updateQuantity(item.variantId, item.quantity - 1)
                         }
                         className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50"
                       >
@@ -153,10 +150,7 @@ export default function Cart() {
                       </span>
                       <button
                         onClick={() =>
-                          updateQuantity(
-                            item.variantId || item.id,
-                            item.quantity + 1,
-                          )
+                          updateQuantity(item.variantId, item.quantity + 1)
                         }
                         className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50"
                       >
