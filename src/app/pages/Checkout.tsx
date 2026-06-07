@@ -675,7 +675,7 @@ export default function Checkout() {
 
               <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-gray-400">
                 <Lock className="w-3 h-3" />
-                Thanh toán an toàn qua PayOS
+                Thanh toán an toàn qua PayOS hoặc trả tiền khi nhận hàng (COD)
               </div>
             </div>
           </div>

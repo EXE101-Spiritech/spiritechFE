@@ -9,7 +9,7 @@ export default function Cart() {
   const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
 
-  const shipping = 30000;
+  const shipping = 0;
   const grandTotal = totalPrice + shipping;
 
   const handleCheckout = () => {
