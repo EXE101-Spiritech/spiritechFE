@@ -25,7 +25,10 @@ interface CartContextType {
   cartId: string | null;
   version: number;
   loading: boolean;
-  addItem: (item: Omit<CartItem, "quantity">) => Promise<void>;
+  addItem: (
+    item: Omit<CartItem, "quantity">,
+    quantity?: number,
+  ) => Promise<void>;
   removeItem: (variantId: string) => Promise<void>;
   updateQuantity: (variantId: string, quantity: number) => Promise<void>;
   clearCart: () => void;
@@ -87,6 +90,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         type?: "product" | "combo";
         variantId?: string;
       },
+      qty: number = 1,
     ) => {
       const token = getAccessToken();
 
@@ -102,7 +106,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem(CART_ID_KEY, cid);
         }
 
-        await cartApi.addItem(cid, { product_id: item.variantId, quantity: 1 });
+        await cartApi.addItem(cid, {
+          product_id: item.variantId,
+          quantity: qty,
+        });
         const updated = await cartApi.get(cid);
         setVersion(updated.version);
       }
@@ -112,10 +119,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const existing = prev.find((i) => i.id === item.id);
         if (existing) {
           return prev.map((i) =>
-            i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i,
+            i.id === item.id ? { ...i, quantity: i.quantity + qty } : i,
           );
         }
-        return [...prev, { ...item, quantity: 1 }];
+        return [...prev, { ...item, quantity: qty }];
       });
     },
     [cartId],

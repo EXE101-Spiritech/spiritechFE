@@ -74,15 +74,17 @@ export default function ProductDetail() {
   }
 
   const handleAddToCart = () => {
-    for (let i = 0; i < qty; i++) {
-      addItem({
+    addItem(
+      {
         id: product.id,
+        variantId: apiProduct?.id,
         type: "product",
         name: product.name,
         price: product.price,
         image: product.image,
-      });
-    }
+      },
+      qty,
+    );
     setAddedMsg(true);
     setTimeout(() => setAddedMsg(false), 2500);
   };

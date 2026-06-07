@@ -65,15 +65,17 @@ export default function ComboDetail() {
   }
 
   const handleAddToCart = () => {
-    for (let i = 0; i < qty; i++) {
-      addItem({
+    addItem(
+      {
         id: combo.id,
+        variantId: apiCombo?.id,
         type: "combo",
         name: combo.name,
         price: combo.price,
         image: combo.image,
-      });
-    }
+      },
+      qty,
+    );
     setAddedMsg(true);
     setTimeout(() => setAddedMsg(false), 2500);
   };

@@ -4,6 +4,8 @@ import { Clock, Calendar, ArrowLeft, ArrowRight, Zap } from "lucide-react";
 import { formatCurrency } from "../data";
 import { productApi } from "@/features/products/api";
 import { QuickCheckoutModal } from "../components/QuickCheckoutModal";
+import { ContentRenderer } from "../components/ContentRenderer";
+import { API_BASE } from "@/shared/api/axiosClient";
 
 export default function GuideDetail() {
   const { id } = useParams<{ id: string }>();
@@ -25,7 +27,11 @@ export default function GuideDetail() {
         title: apiArticle.title,
         excerpt: apiArticle.excerpt || "",
         content: apiArticle.content || "",
-        image: apiArticle.image_url || "",
+        image: apiArticle.image_url
+          ? apiArticle.image_url.startsWith("http")
+            ? apiArticle.image_url
+            : `${API_BASE}${apiArticle.image_url}`
+          : "",
         category: "",
         readTime: "5 phút",
         date: apiArticle.created_at ? apiArticle.created_at.slice(0, 10) : "",
@@ -75,7 +81,7 @@ export default function GuideDetail() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button
           onClick={() => navigate(-1)}
           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors hover:underline mb-6"
@@ -85,13 +91,15 @@ export default function GuideDetail() {
         </button>
 
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-8">
-          <div className="h-72 overflow-hidden">
-            <img
-              src={article.image}
-              alt={article.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
+          {article.image && (
+            <div className="flex justify-center bg-gray-50 p-4">
+              <img
+                src={article.image}
+                alt={article.title}
+                className="w-full max-w-md h-auto rounded-lg"
+              />
+            </div>
+          )}
           <div className="p-8">
             <div className="flex flex-wrap gap-3 mb-4">
               <span
@@ -122,16 +130,11 @@ export default function GuideDetail() {
               {article.title}
             </h1>
 
-            <div className="space-y-5 text-gray-600 leading-relaxed">
-              {[
-                article.excerpt,
-                "Đây là một trong những nghi lễ quan trọng nhất trong văn hóa tâm linh của người Việt Nam. Từ bao đời nay, người Việt đã gìn giữ và truyền lại những phong tục thờ cúng thiêng liêng này như một cách để bày tỏ lòng biết ơn và kính trọng với tổ tiên.",
-                "Khi chuẩn bị lễ vật, điều quan trọng nhất là tấm lòng thành kính. Tuy nhiên, việc chọn đúng lễ vật theo phong tục cũng rất quan trọng để thể hiện sự tôn trọng với thần linh và người đã khuất.",
-                "Thứ tự thực hiện nghi lễ: Đầu tiên, dọn dẹp bàn thờ sạch sẽ và bày biện lễ vật theo đúng thứ tự. Thắp nhang và nến trước, sau đó đọc văn khấn với tấm lòng thành tâm. Cuối buổi lễ, hóa vàng mã nếu có.",
-                "Lưu ý quan trọng: Luôn giữ thái độ trang nghiêm, tập trung khi thực hiện nghi lễ. Không ăn uống hay nói chuyện ồn ào trong khu vực thờ cúng. Đảm bảo nhang nến cháy an toàn và có người trông coi.",
-              ].map((para, i) => (
-                <p key={i}>{para}</p>
-              ))}
+            <div
+              className="text-gray-600 leading-relaxed"
+              style={{ fontSize: "20px" }}
+            >
+              <ContentRenderer content={article.content} />
             </div>
 
             {/* Related combo CTA with Buy Now */}
@@ -217,48 +220,6 @@ export default function GuideDetail() {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Related articles */}
-        <div>
-          <h2
-            style={{
-              fontFamily: "Lora, serif",
-              color: "#0f172a",
-              fontSize: "1.3rem",
-            }}
-            className="mb-5"
-          >
-            Bài viết liên quan
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {others.map((a) => (
-              <Link
-                key={a.id}
-                to={`/guide/${a.id}`}
-                className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all group"
-              >
-                <div className="h-32 overflow-hidden">
-                  <img
-                    src={a.image}
-                    alt={a.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-                <div className="p-3">
-                  <p className="text-xs text-gray-400 mb-1">
-                    {a.category} · {a.readTime}
-                  </p>
-                  <h4
-                    className="text-sm line-clamp-2"
-                    style={{ fontFamily: "Lora, serif", color: "#0f172a" }}
-                  >
-                    {a.title}
-                  </h4>
-                </div>
-              </Link>
-            ))}
           </div>
         </div>
       </div>

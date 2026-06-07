@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { Clock, Calendar, Tag } from "lucide-react";
 import { productApi } from "@/features/products/api";
+import { API_BASE } from "@/shared/api/axiosClient";
 
 export default function Guide() {
   const [apiArticles, setApiArticles] = useState<any[] | null>(null);
@@ -15,18 +16,25 @@ export default function Guide() {
 
   const displayArticles =
     apiArticles && apiArticles.length > 0
-      ? apiArticles.map((a) => ({
-          id: a.slug || a.id,
-          title: a.title,
-          excerpt: a.excerpt || "",
-          image: a.image_url || "",
-          category: "",
-          readTime: "5 phút",
-          date: a.created_at ? a.created_at.slice(0, 10) : "",
-          content: "",
-          relatedComboId: null,
-          relatedComboName: null,
-        }))
+      ? apiArticles.map((a) => {
+          const imgUrl = a.image_url
+            ? a.image_url.startsWith("http")
+              ? a.image_url
+              : `${API_BASE}${a.image_url}`
+            : "";
+          return {
+            id: a.slug || a.id,
+            title: a.title,
+            excerpt: a.excerpt || "",
+            image: imgUrl,
+            category: "",
+            readTime: "5 phút",
+            date: a.created_at ? a.created_at.slice(0, 10) : "",
+            content: "",
+            relatedComboId: null,
+            relatedComboName: null,
+          };
+        })
       : [];
 
   if (!displayArticles.length) {
@@ -93,7 +101,7 @@ export default function Guide() {
             Thông Tin & Kiến Thức
           </h1>
           <p className="text-white/70 mt-1">
-            Kiến thức thờ cúng theo phong tục truyền thống Việt Nam
+            Kiến thức và thông tin trên nền tảng
           </p>
         </div>
       </div>
@@ -105,13 +113,15 @@ export default function Guide() {
           className="block bg-white rounded-2xl overflow-hidden shadow-sm mb-8 hover:shadow-lg transition-all group"
         >
           <div className="md:flex">
-            <div className="md:w-2/5 h-64 md:h-auto overflow-hidden">
-              <img
-                src={featured.image}
-                alt={featured.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
+            {featured.image && (
+              <div className="md:w-2/5 h-64 md:h-auto overflow-hidden">
+                <img
+                  src={featured.image}
+                  alt={featured.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+            )}
             <div className="md:w-3/5 p-8 flex flex-col justify-center">
               <div className="flex flex-wrap gap-2 mb-3">
                 <span
@@ -160,7 +170,7 @@ export default function Guide() {
               fontSize: "clamp(1.1rem, 2.5vw, 1.5rem)",
             }}
           >
-            Kiến Thức Thờ Cúng
+            Thông Tin & Kiến Thức
           </h2>
         </div>
 
@@ -171,19 +181,21 @@ export default function Guide() {
               to={`/guide/${article.id}`}
               className="block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all group"
             >
-              <div className="relative h-44 overflow-hidden">
-                <img
-                  src={article.image}
-                  alt={article.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <span
-                  className="absolute top-3 left-3 text-white text-xs px-2.5 py-1 rounded-full"
-                  style={{ backgroundColor: "rgba(144,33,49,0.85)" }}
-                >
-                  {article.category}
-                </span>
-              </div>
+              {article.image && (
+                <div className="relative">
+                  <img
+                    src={article.image}
+                    alt={article.title}
+                    className="w-full h-auto group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <span
+                    className="absolute top-3 left-3 text-white text-xs px-2.5 py-1 rounded-full"
+                    style={{ backgroundColor: "rgba(144,33,49,0.85)" }}
+                  >
+                    {article.category}
+                  </span>
+                </div>
+              )}
               <div className="p-5">
                 <div className="flex gap-3 text-xs text-gray-400 mb-2">
                   <span className="flex items-center gap-1">

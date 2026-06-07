@@ -8,6 +8,7 @@ import {
   Eye,
   EyeOff,
   CalendarDays,
+  Upload,
 } from "lucide-react";
 import { adminApi } from "@/features/admin/api";
 
@@ -53,6 +54,8 @@ export default function AdminCMS() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -416,16 +419,77 @@ export default function AdminCMS() {
               </div>
               <div>
                 <label className="block text-sm text-gray-700 mb-1">
-                  URL hình ảnh
+                  Hình ảnh đại diện
                 </label>
-                <input
-                  value={form.image_url}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, image_url: e.target.value }))
-                  }
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
-                  placeholder="https://..."
-                />
+                <div className="flex flex-wrap gap-3 mb-3">
+                  {form.image_url && (
+                    <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
+                      <img
+                        src={form.image_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        onClick={() =>
+                          setForm((f) => ({ ...f, image_url: "" }))
+                        }
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        X
+                      </button>
+                    </div>
+                  )}
+                  {!form.image_url && (
+                    <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs flex-shrink-0 cursor-pointer hover:bg-gray-50 relative">
+                      {uploading ? (
+                        <span className="inline-block w-5 h-5 border-2 border-[#cc323f] border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Upload className="w-5 h-5" />
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        disabled={uploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploading(true);
+                          try {
+                            const result = await adminApi.uploadImage(file);
+                            setForm((f) => ({ ...f, image_url: result.url }));
+                          } catch {
+                            alert("Tải ảnh thất bại.");
+                          }
+                          setUploading(false);
+                          e.target.value = "";
+                        }}
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-[200px] self-center">
+                    <div className="flex gap-2">
+                      <input
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
+                        placeholder="Hoặc nhập URL..."
+                        className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none"
+                      />
+                      <button
+                        onClick={() => {
+                          if (imageUrl) {
+                            setForm((f) => ({ ...f, image_url: imageUrl }));
+                            setImageUrl("");
+                          }
+                        }}
+                        className="px-3 py-2 rounded-xl text-white text-sm font-medium"
+                        style={{ background: "#cc323f" }}
+                      >
+                        Thêm
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="block text-sm text-gray-700 mb-1">

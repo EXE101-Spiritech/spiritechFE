@@ -85,7 +85,7 @@ export default function Home() {
                 fontWeight: 700,
               }}
             >
-              Đồ Cúng Tâm Linh <br />
+              Đồ Cúng <br />
               <span style={{ color: "#e6bb0c" }}>Chất Lượng Cao</span>
             </h1>
 
@@ -139,7 +139,7 @@ export default function Home() {
               {
                 icon: Truck,
                 label: "Giao hàng nhanh",
-                sub: "Giao hàng nội thành thành phố trong 2-3 tiếng",
+                sub: "Giao hàng nội thành",
               },
               {
                 icon: ShieldCheck,
@@ -149,12 +149,12 @@ export default function Home() {
               {
                 icon: HeartHandshake,
                 label: "Tư vấn miễn phí",
-                sub: "Chuyên gia 24/7",
+                sub: "Trợ lý An Tâm luôn sẵn sàng hỗ trợ",
               },
               {
                 icon: Clock,
                 label: "Đặt hàng dễ dàng",
-                sub: "Online 24/7",
+                sub: "Xem - Chọn - Thanh toán",
               },
             ].map((b) => (
               <div key={b.label} className="flex items-center gap-3 py-2">
@@ -370,61 +370,6 @@ export default function Home() {
                 </p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Banner */}
-      <section
-        className="py-16 text-center relative overflow-hidden"
-        style={{
-          backgroundImage: `url(https://images.unsplash.com/photo-1759671826299-5b4af84ca55b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1400)`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div
-          className="absolute inset-0"
-          style={{ backgroundColor: "rgba(144,33,49,0.88)" }}
-        />
-        <div className="relative z-10 max-w-2xl mx-auto px-4">
-          <h2
-            className="text-white mb-4"
-            style={{
-              fontFamily: "Lora, serif",
-              fontSize: "2rem",
-            }}
-          >
-            Tư Vấn Lễ Vật Miễn Phí
-          </h2>
-          <p className="text-white/80 mb-6 text-lg">
-            Không biết cúng gì? Hãy để chúng tôi tư vấn miễn phí. Chuyên gia sẵn
-            sàng hỗ trợ bạn 24/7.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link
-              to="/contact"
-              className="px-6 py-3 rounded-full transition-colors"
-              style={{
-                backgroundColor: "#e6bb0c",
-                color: "#0f172a",
-                fontWeight: 600,
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = "#bb8907")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "#e6bb0c")
-              }
-            >
-              Liên hệ tư vấn
-            </Link>
-            <Link
-              to="/guide"
-              className="bg-white/10 border border-white/30 text-white px-6 py-3 rounded-full hover:bg-white/20 transition-colors"
-            >
-              Đọc hướng dẫn
-            </Link>
           </div>
         </div>
       </section>

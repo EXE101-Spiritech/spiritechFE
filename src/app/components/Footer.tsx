@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { Phone, Mail, MapPin, Facebook, Youtube } from "lucide-react";
+import { Phone, Mail, MapPin, Facebook } from "lucide-react";
 import { Logo } from "./Logo";
 
 export function Footer() {
@@ -23,16 +23,12 @@ export function Footer() {
             </p>
             <div className="flex gap-3">
               <a
-                href="#"
+                href="https://www.facebook.com/profile.php?id=61590624020423"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center transition-colors hover:bg-[#e6bb0c]"
               >
                 <Facebook className="w-4 h-4 text-white" />
-              </a>
-              <a
-                href="#"
-                className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center transition-colors hover:bg-[#e6bb0c]"
-              >
-                <Youtube className="w-4 h-4 text-white" />
               </a>
             </div>
           </div>
@@ -108,24 +104,24 @@ export function Footer() {
         <div className="mt-6 pt-4 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-white/40 text-xs">© 2026 Góc an nhiên.</p>
           <div className="flex gap-4">
-            <a
-              href="#"
+            <Link
+              to="/privacy-policy"
               className="text-white/40 hover:text-white/70 text-xs transition-colors"
             >
               Chính sách bảo mật
-            </a>
-            <a
-              href="#"
+            </Link>
+            <Link
+              to="/terms-of-service"
               className="text-white/40 hover:text-white/70 text-xs transition-colors"
             >
               Điều khoản dịch vụ
-            </a>
-            <a
-              href="#"
+            </Link>
+            <Link
+              to="/return-policy"
               className="text-white/40 hover:text-white/70 text-xs transition-colors"
             >
               Chính sách đổi trả
-            </a>
+            </Link>
           </div>
         </div>
       </div>
