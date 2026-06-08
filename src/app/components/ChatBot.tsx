@@ -556,7 +556,7 @@ export function ChatBot() {
 
           return (
             <div
-              className="fixed bottom-2 right-36 z-50"
+              className="fixed bottom-2 right-4 sm:right-36 z-50"
               style={{
                 width: "min(320px, calc(100vw - 32px))",
                 fontFamily: "Be Vietnam Pro, sans-serif",
