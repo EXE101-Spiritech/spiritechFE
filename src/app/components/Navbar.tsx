@@ -18,7 +18,9 @@ export function Navbar() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [mobileSearchQuery, setMobileSearchQuery] = useState("");
   const [apiResults, setApiResults] = useState<any[]>([]);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
   const { totalItems } = useCart();
   const { isLoggedIn, user } = useAuth();
   const isAdmin =
@@ -203,7 +205,10 @@ export function Navbar() {
               {showDropdown && (
                 <div
                   className="absolute right-0 top-[calc(100%+8px)] bg-white rounded-xl shadow-2xl overflow-hidden"
-                  style={{ width: "320px", border: "1px solid #f1e5e5" }}
+                  style={{
+                    width: "min(360px, calc(100vw - 32px))",
+                    border: "1px solid #f1e5e5",
+                  }}
                 >
                   {/* Popular suggestions */}
                   {showPopular && (

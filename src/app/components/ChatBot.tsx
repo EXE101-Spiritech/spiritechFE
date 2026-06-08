@@ -558,7 +558,7 @@ export function ChatBot() {
             <div
               className="fixed bottom-2 right-36 z-50"
               style={{
-                width: "320px",
+                width: "min(320px, calc(100vw - 32px))",
                 fontFamily: "Be Vietnam Pro, sans-serif",
               }}
             >
@@ -837,9 +837,9 @@ export function ChatBot() {
       {open && (
         <div
           ref={chatRef}
-          className="fixed bottom-24 right-6 z-50 w-[460px] sm:w-[540px] flex flex-col rounded-2xl overflow-hidden shadow-2xl"
+          className="fixed bottom-24 right-4 sm:right-6 z-50 w-[calc(100vw-32px)] sm:w-[400px] md:w-[460px] flex flex-col rounded-2xl overflow-hidden shadow-2xl"
           style={{
-            height: "520px",
+            height: "min(520px, 70vh)",
             fontFamily: "Be Vietnam Pro, sans-serif",
             border: "1px solid rgba(204,50,63,0.15)",
           }}
