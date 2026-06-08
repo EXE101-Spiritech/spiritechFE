@@ -130,7 +130,7 @@ function defaultGreeting(): Message[] {
     {
       id: "0",
       role: "bot",
-      text: "Xin chào! 🙏 Chào mừng đến với **Góc An Nhiên**.\n\nTôi là **Trợ lý An Tâm**, sẵn sàng giúp bạn về:\n• Sản phẩm & combo đồ cúng\n• Tư vấn nghi lễ cúng bái\n• Đặt hàng & vận chuyển\n\nBạn cần giúp gì hôm nay?",
+      text: "Xin chào! 🙏 Chào mừng đến với **SpiriTech**.\n\nTôi là **Trợ lý An Tâm**, sẵn sàng giúp bạn về:\n• Sản phẩm & combo đồ cúng\n• Tư vấn nghi lễ cúng bái\n• Đặt hàng & vận chuyển\n\nBạn cần giúp gì hôm nay?",
       time: new Date(),
       quickReplies: QUICK_REPLIES_INIT,
     },
@@ -282,7 +282,7 @@ export function ChatBot() {
     {
       id: "0",
       role: "bot",
-      text: "Xin chào! 🙏 Chào mừng đến với **Góc An Nhiên**.\n\nTôi là **Trợ lý An Tâm**, sẵn sàng giúp bạn về:\n• Sản phẩm & combo đồ cúng\n• Tư vấn nghi lễ cúng bái\n• Đặt hàng & vận chuyển\n\nBạn cần giúp gì hôm nay?",
+      text: "Xin chào! 🙏 Chào mừng đến với **SpiriTech**.\n\nTôi là **Trợ lý An Tâm**, sẵn sàng giúp bạn về:\n• Sản phẩm & combo đồ cúng\n• Tư vấn nghi lễ cúng bái\n• Đặt hàng & vận chuyển\n\nBạn cần giúp gì hôm nay?",
       time: new Date(),
       quickReplies: QUICK_REPLIES_INIT,
     },
@@ -463,7 +463,7 @@ export function ChatBot() {
       {
         id: Date.now().toString(),
         role: "bot",
-        text: "Cuộc trò chuyện mới đã bắt đầu! 🙏\n\nTôi là **Trợ lý An Tâm** của **Góc An Nhiên**, luôn sẵn sàng hỗ trợ bạn về sản phẩm, đặt hàng và nghi lễ cúng bái.\n\nBạn cần giúp gì ạ?",
+        text: "Cuộc trò chuyện mới đã bắt đầu! 🙏\n\nTôi là **Trợ lý An Tâm** của **SpiriTech**, luôn sẵn sàng hỗ trợ bạn về sản phẩm, đặt hàng và nghi lễ cúng bái.\n\nBạn cần giúp gì ạ?",
         time: new Date(),
         quickReplies: QUICK_REPLIES_INIT,
       },

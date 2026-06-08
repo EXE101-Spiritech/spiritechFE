@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import logoSvg from "../../imports/logo-only-primary.svg";
+import { Logo } from "../components/Logo";
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -66,7 +66,7 @@ export default function Register() {
   return (
     <div
       style={{ fontFamily: "Be Vietnam Pro, sans-serif" }}
-      className="min-h-screen bg-[#f8fafc] flex items-center justify-center px-4 py-12"
+      className="min-h-screen bg-[#f8fafc] flex sm:items-center justify-center px-4 py-8 sm:py-12"
     >
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
@@ -74,7 +74,7 @@ export default function Register() {
             className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
             style={{ backgroundColor: "#902131" }}
           >
-            <img src={logoSvg} alt="Logo" className="w-9 h-9 object-contain" />
+            <Logo height={36} />
           </div>
           <h1
             style={{

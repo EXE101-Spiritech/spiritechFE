@@ -17,7 +17,7 @@ export default function About() {
         <div className="relative z-10 max-w-3xl mx-auto px-4">
           
           <h1 style={{ fontFamily: 'Lora, serif', color: '#e6bb0c', fontSize: 'clamp(2rem, 7vw, 4.5rem)', lineHeight: 1.15 }}>
-            Góc An Nhiên
+            SpiriTech
           </h1>
           <p className="mt-5" style={{ color: 'white', fontSize: 'clamp(0.95rem, 2.2vw, 1.25rem)', lineHeight: 1.7 }}>
             Hành trình gìn giữ và lan tỏa văn hóa thờ cúng truyền thống Việt Nam
@@ -41,7 +41,7 @@ export default function About() {
             <div>
               <div className="space-y-4 text-gray-600 leading-relaxed">
                 <p>
-                  Góc An Nhiên được thành lập năm 2026 bởi một nhóm những người con đất Việt với tình yêu sâu sắc đối với văn hóa thờ cúng truyền thống. Chúng tôi nhận thấy nhiều gia đình đang gặp khó khăn trong việc chuẩn bị đầy đủ lễ vật theo đúng phong tục do cuộc sống hiện đại bận rộn.
+                  SpiriTech được thành lập năm 2026 bởi một nhóm những người con đất Việt với tình yêu sâu sắc đối với văn hóa thờ cúng truyền thống. Chúng tôi nhận thấy nhiều gia đình đang gặp khó khăn trong việc chuẩn bị đầy đủ lễ vật theo đúng phong tục do cuộc sống hiện đại bận rộn.
                 </p>
                 <p>
                   Từ đó, chúng tôi ra đời với sứ mệnh trở thành người bạn đồng hành tin cậy, giúp các gia đình Việt dễ dàng thực hiện nghi lễ thờ cúng một cách trang trọng và đúng phong tục, dù bận rộn đến đâu.
@@ -115,7 +115,7 @@ export default function About() {
           <div className="max-w-3xl mx-auto w-full">
             <img
               src={ABOUT_IMG}
-              alt="Đội ngũ Góc An Nhiên"
+              alt="Đội ngũ SpiriTech"
               className="w-full h-auto object-contain"
             />
           </div>

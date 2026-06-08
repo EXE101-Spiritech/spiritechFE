@@ -1006,7 +1006,7 @@ export function QuickCheckoutModal({ item, qty, onClose }: Props) {
               Đặt Hàng Thành Công!
             </h2>
             <p className="text-gray-500 text-sm mb-6">
-              Cảm ơn bạn đã tin tưởng Góc An Nhiên 🙏
+              Cảm ơn bạn đã tin tưởng SpiriTech 🙏
             </p>
             <div
               className="w-full rounded-2xl px-5 py-4 mb-5"

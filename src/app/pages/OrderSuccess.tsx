@@ -351,7 +351,7 @@ export default function OrderSuccess() {
           </h1>
           <p className="text-white/70 mt-2 text-sm">
             Cảm ơn <strong className="text-white">{shippingInfo.name}</strong>{" "}
-            đã tin tưởng Góc An Nhiên 🙏
+            đã tin tưởng SpiriTech 🙏
           </p>
 
           {/* Order ID badge */}

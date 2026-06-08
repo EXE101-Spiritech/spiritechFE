@@ -9,7 +9,7 @@ export function Logo({ height = 36, className = "" }: LogoProps) {
   return (
     <img
       src={logoUrl}
-      alt="Góc An Nhiên"
+      alt="SpiriTech"
       style={{ height: `${height}px`, width: "auto" }}
       className={className}
     />

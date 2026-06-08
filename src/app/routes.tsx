@@ -17,7 +17,6 @@ import Guide from "./pages/Guide";
 import GuideDetail from "./pages/GuideDetail";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
-import ResetPassword from "./pages/ResetPassword";
 import CalendarPage from "./pages/CalendarPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -80,7 +79,6 @@ export const router = createBrowserRouter([
       { path: "cart", Component: Cart },
       { path: "login", Component: Login },
       { path: "register", Component: Register },
-      { path: "reset-password", Component: ResetPassword },
       { path: "checkout", Component: Checkout },
       { path: "order-success", Component: OrderSuccess },
       { path: "account", Component: Account },

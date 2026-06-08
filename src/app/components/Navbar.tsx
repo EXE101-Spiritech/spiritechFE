@@ -705,7 +705,7 @@ export function Navbar() {
                 letterSpacing: "0.01em",
               }}
             >
-              Góc An Nhiên
+              SpiriTech
             </span>
             <button
               onClick={() => setMobileOpen(false)}

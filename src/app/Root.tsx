@@ -7,7 +7,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { HealthProvider } from "./context/HealthContext";
 
-// Pages that should not show footer
+// Pages that should not show footer or chat
 const NO_FOOTER_PATHS = ["/login", "/register", "/reset-password"];
 
 function ScrollToTop() {
@@ -20,7 +20,7 @@ function ScrollToTop() {
 
 export default function Root() {
   const location = useLocation();
-  const showFooter = !NO_FOOTER_PATHS.some((p) =>
+  const isAuthPage = NO_FOOTER_PATHS.some((p) =>
     location.pathname.startsWith(p),
   );
 
@@ -34,8 +34,8 @@ export default function Root() {
             <main className="flex-1">
               <Outlet />
             </main>
-            {showFooter && <Footer />}
-            <ChatBot />
+            {!isAuthPage && <Footer />}
+            {!isAuthPage && <ChatBot />}
           </div>
         </CartProvider>
       </AuthProvider>

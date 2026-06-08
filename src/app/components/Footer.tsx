@@ -102,7 +102,7 @@ export function Footer() {
         </div>
 
         <div className="mt-6 pt-4 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-white/40 text-xs">© 2026 Góc an nhiên.</p>
+          <p className="text-white/40 text-xs">© 2026 SpiriTech.</p>
           <div className="flex gap-4">
             <Link
               to="/privacy-policy"
