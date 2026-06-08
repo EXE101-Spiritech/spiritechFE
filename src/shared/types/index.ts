@@ -21,7 +21,7 @@ export interface LoginReq {
 export interface RegisterReq {
   phone: string;
   password: string;
-  name: string;
+  full_name: string;
 }
 
 export interface RefreshReq {

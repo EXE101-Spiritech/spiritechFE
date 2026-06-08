@@ -8,7 +8,6 @@ export default function Register() {
   const [form, setForm] = useState({
     name: "",
     phone: "",
-    email: "",
     password: "",
   });
   const [showPass, setShowPass] = useState(false);
@@ -25,8 +24,7 @@ export default function Register() {
     if (!form.name.trim()) e.name = "Vui lòng nhập họ tên";
     if (!form.phone.trim() || !/^0\d{9}$/.test(form.phone))
       e.phone = "Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)";
-    if (!form.email.trim() || !form.email.includes("@"))
-      e.email = "Email không hợp lệ";
+
     if (!form.password || form.password.length < 6)
       e.password = "Mật khẩu tối thiểu 6 ký tự";
     if (!agreed) e.agreed = "Vui lòng đồng ý với các điều khoản";
@@ -128,25 +126,6 @@ export default function Register() {
               />
               {errors.phone && (
                 <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-              )}
-            </div>
-            {/* Email */}
-            <div>
-              <label
-                className="block text-sm text-gray-700 mb-1.5"
-                style={{ fontWeight: 500 }}
-              >
-                Email *
-              </label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => update("email", e.target.value)}
-                placeholder="example@email.com"
-                className={inputClass("email")}
-              />
-              {errors.email && (
-                <p className="text-red-500 text-xs mt-1">{errors.email}</p>
               )}
             </div>
             {/* Password */}
