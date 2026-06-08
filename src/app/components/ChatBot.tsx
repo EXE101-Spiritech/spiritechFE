@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { ContentRenderer } from "./ContentRenderer";
 import { Solar } from "lunar-javascript";
+import { getCookie, setCookie, removeCookie } from "@/shared/api/cookies";
+import { getAccessToken } from "@/shared/api/axiosClient";
 
 // ─── Calendar helpers ────────────────────────────────────────────────────────
 function getLunarMonthName(m: number): string {
@@ -287,12 +289,26 @@ export function ChatBot() {
   ]);
   const [sessionId, setSessionId] = useState<string | null>(() => {
     try {
-      return localStorage.getItem(SESSION_KEY);
+      return getCookie(SESSION_KEY);
     } catch {
       return null;
     }
   });
   const loadedRef = useRef(false);
+  const [lastToken, setLastToken] = useState<string | null>(() =>
+    getAccessToken(),
+  );
+
+  // Reset session when user changes
+  useEffect(() => {
+    const currentToken = getAccessToken();
+    if (lastToken && currentToken !== lastToken) {
+      removeCookie(SESSION_KEY);
+      setSessionId(null);
+      setMessages([]);
+    }
+    setLastToken(currentToken);
+  }, [isLoggedIn]);
 
   // On mount: restore past messages from API if session exists
   useEffect(() => {
@@ -401,7 +417,7 @@ export function ChatBot() {
         );
         setSessionId(newSessionId);
         try {
-          localStorage.setItem(SESSION_KEY, newSessionId);
+          setCookie(SESSION_KEY, newSessionId, 86400 * 30);
         } catch {}
       } catch {
         setMessages((prev) =>
@@ -429,7 +445,7 @@ export function ChatBot() {
 
   const handleReset = () => {
     try {
-      localStorage.removeItem(SESSION_KEY);
+      removeCookie(SESSION_KEY);
     } catch {}
     if (!isLoggedIn) {
       setMessages([]);
@@ -439,7 +455,7 @@ export function ChatBot() {
       .then(({ session_id }) => {
         setSessionId(session_id);
         try {
-          localStorage.setItem(SESSION_KEY, session_id);
+          setCookie(SESSION_KEY, session_id, 86400 * 30);
         } catch {}
       })
       .catch(() => {});
