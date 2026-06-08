@@ -55,6 +55,7 @@ export default function Checkout() {
   const [successOverlay, setSuccessOverlay] = useState<{
     orderId: string;
   } | null>(null);
+  const [checkoutError, setCheckoutError] = useState("");
   // ── Coupon ──────────────────────────────────────────────────────────────────
   const [couponCode, setCouponCode] = useState("");
   const [couponInfo, setCouponInfo] = useState<CouponInfo | null>(null);
@@ -115,6 +116,7 @@ export default function Checkout() {
   // ─── Submit Order ───────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!validate()) return;
+    setCheckoutError("");
     setLoading(true);
 
     try {
@@ -198,7 +200,7 @@ export default function Checkout() {
       setLoading(false);
       const msg =
         err?.response?.data?.message || "Đặt hàng thất bại. Vui lòng thử lại.";
-      alert(msg);
+      setCheckoutError(msg);
     }
   };
 
@@ -657,6 +659,11 @@ export default function Checkout() {
                 </div>
               </div>
 
+              {checkoutError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 mb-3">
+                  {checkoutError}
+                </div>
+              )}
               <button
                 onClick={handleSubmit}
                 disabled={loading}
