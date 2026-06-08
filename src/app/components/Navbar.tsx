@@ -7,6 +7,7 @@ import { formatCurrency } from "../data";
 import { Logo } from "./Logo";
 import { AdminBadge } from "./AdminBadge";
 import { productApi } from "@/features/products/api";
+import { track } from "@/features/products/tracking/api";
 
 const popularProducts: any[] = [];
 const allItems: any[] = [];
@@ -94,7 +95,10 @@ export function Navbar() {
     debounceRef.current = setTimeout(() => {
       productApi
         .search({ q: searchQuery, size: 6 })
-        .then((r) => setApiResults(r.data))
+        .then((r) => {
+          setApiResults(r.data);
+          track("search.performed", { query: searchQuery, results: r.total });
+        })
         .catch(() => {});
     }, 300);
     return () => {

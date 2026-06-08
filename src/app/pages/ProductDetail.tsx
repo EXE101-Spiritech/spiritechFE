@@ -12,6 +12,7 @@ import { formatCurrency } from "../data";
 import { productApi } from "@/features/products/api";
 import { useCart } from "../context/CartContext";
 import { QuickCheckoutModal } from "../components/QuickCheckoutModal";
+import { track } from "@/features/products/tracking/api";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -28,7 +29,10 @@ export default function ProductDetail() {
     if (id) {
       productApi
         .get(id)
-        .then(setApiProduct)
+        .then((p) => {
+          setApiProduct(p);
+          track("product.viewed", { slug: id, product_id: p.id, name: p.name });
+        })
         .catch(() => setApiProduct(null))
         .finally(() => setApiDone(true));
     }

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router";
 import { Star } from "lucide-react";
 import { formatCurrency } from "../data";
 import { comboApi } from "@/features/combos/api";
+import { track } from "@/features/products/tracking/api";
 function StarRating({ rating }: { rating: number }) {
   return (
     <div className="flex gap-0.5">
@@ -45,6 +46,7 @@ export default function ComboList() {
 
   useEffect(() => {
     load(1);
+    track("combo.list_viewed", {});
   }, []);
 
   const displayCombos = apiCombos

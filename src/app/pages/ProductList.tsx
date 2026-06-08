@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Star, SlidersHorizontal, X } from "lucide-react";
 import { formatCurrency } from "../data";
 import { productApi } from "@/features/products/api";
+import { track } from "@/features/products/tracking/api";
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -43,6 +44,7 @@ export default function ProductList() {
 
   useEffect(() => {
     load(1);
+    track("product.list_viewed", {});
   }, []);
 
   const displayProducts = apiProducts

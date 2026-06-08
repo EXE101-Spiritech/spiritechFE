@@ -13,6 +13,7 @@ import { formatCurrency } from "../data";
 import { comboApi } from "@/features/combos/api";
 import { useCart } from "../context/CartContext";
 import { QuickCheckoutModal } from "../components/QuickCheckoutModal";
+import { track } from "@/features/products/tracking/api";
 export default function ComboDetail() {
   const { id } = useParams<{ id: string }>();
   const { addItem } = useCart();
@@ -27,7 +28,10 @@ export default function ComboDetail() {
     if (id) {
       comboApi
         .get(id)
-        .then(setApiCombo)
+        .then((c) => {
+          setApiCombo(c);
+          track("combo.viewed", { slug: id, product_id: c.id, name: c.name });
+        })
         .catch(() => {});
     }
   }, [id]);
