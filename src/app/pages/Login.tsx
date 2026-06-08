@@ -162,12 +162,13 @@ export default function Login() {
 
         <p className="text-center text-gray-400 text-xs mt-6">
           Bằng cách đăng nhập, bạn đồng ý với{" "}
-          <span
-            className="hover:underline cursor-default"
+          <Link
+            to="/terms-of-service"
+            className="hover:underline"
             style={{ color: "#cc323f" }}
           >
             Điều khoản dịch vụ
-          </span>{" "}
+          </Link>{" "}
           của chúng tôi
         </p>
       </div>

@@ -18,7 +18,7 @@ Bằng việc hoàn tất quy trình đăng ký tài khoản và kích hoạt th
 
 ## 3. Quy định thanh toán và Giao dịch thương mại
 *   Spiritech áp dụng hình thức khóa mã VietQR động thông qua cổng thanh toán PayOS.
-*   Khi Khách hàng thực hiện quét mã QR, cú pháp chuyển khoản và số tiền sẽ được khóa cố định theo mã định danh duy nhất của đơn hàng (\`SPTECH_ORDER_XXXX\`). Khách hàng không được cố ý thay đổi nội dung chuyển khoản tự động này nhằm đảm bảo tính chính xác của luồng đối soát tự động trên hệ thống.
+*   Khi khách hàng thực hiện quét mã QR, cú pháp chuyển khoản và số tiền sẽ được khóa cố định theo mã định danh duy nhất của đơn hàng (\`DH SPyy/dd/mm+xxxxx\`). Khách hàng không được cố ý thay đổi nội dung chuyển khoản tự động này nhằm đảm bảo tính chính xác của luồng đối soát tự động trên hệ thống.
 *   Mọi giao dịch thanh toán thành công sẽ được hệ thống ghi nhận ngay khi có tín hiệu Webhook xác nhận từ PayOS và số dư tính năng hoặc quyền truy cập của Khách hàng sẽ được kích hoạt tự động.
 
 ## 4. Chính sách sử dụng tài nguyên AI (Fair Use Policy)
