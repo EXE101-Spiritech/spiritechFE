@@ -247,6 +247,21 @@ export interface OrderDetail {
   delivered_at?: string;
   carrier?: string;
   tracking?: string;
+  notes?: string;
+  shipping_address?: {
+    line1: string;
+    city: string;
+    name: string;
+    phone: string;
+    email: string;
+  };
+  items?: {
+    product_id: string;
+    name: string;
+    unit_price: number;
+    quantity: number;
+    line_total: number;
+  }[];
 }
 
 export interface CancelOrderResponse {

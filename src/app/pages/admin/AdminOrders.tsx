@@ -6,6 +6,7 @@ import {
   X,
   CheckCircle,
   Package,
+  MapPin,
 } from "lucide-react";
 import { adminApi } from "@/features/admin/api";
 import { formatCurrency } from "../../data/index";
@@ -63,6 +64,21 @@ export default function AdminOrders() {
   const [shippingTracking, setShippingTracking] = useState("");
   const [updating, setUpdating] = useState(false);
   const [updateMsg, setUpdateMsg] = useState("");
+  const [revealedPhones, setRevealedPhones] = useState<Set<string>>(new Set());
+
+  const togglePhone = (id: string) => {
+    setRevealedPhones((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const maskPhone = (phone: string | undefined): string => {
+    if (!phone || phone.length < 4) return phone || "";
+    return phone.slice(0, 3) + "*".repeat(phone.length - 3);
+  };
 
   const load = (p = page) => {
     setLoading(true);
@@ -200,6 +216,9 @@ export default function AdminOrders() {
                 <th className="text-left px-5 py-3.5 text-gray-500 font-medium">
                   Mã đơn
                 </th>
+                <th className="text-left px-5 py-3.5 text-gray-500 font-medium">
+                  Khách hàng
+                </th>
                 <th className="text-left px-5 py-3.5 text-gray-500 font-medium hidden sm:table-cell">
                   Ngày đặt
                 </th>
@@ -233,6 +252,20 @@ export default function AdminOrders() {
                     <p className="text-xs text-gray-400 font-mono mt-0.5">
                       {o.id.slice(0, 8)}...
                     </p>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <p className="text-sm font-medium text-gray-800">
+                      {o.shipping_address?.name || "—"}
+                    </p>
+                    <button
+                      onClick={() => togglePhone(o.id)}
+                      className="text-xs text-gray-400 hover:text-[#cc323f] transition-colors text-left"
+                      title={revealedPhones.has(o.id) ? "Ẩn số" : "Hiện số"}
+                    >
+                      {revealedPhones.has(o.id)
+                        ? o.shipping_address?.phone || ""
+                        : maskPhone(o.shipping_address?.phone)}
+                    </button>
                   </td>
                   <td className="px-5 py-3.5 text-gray-500 text-xs hidden sm:table-cell">
                     {o.placed_at
@@ -354,6 +387,40 @@ export default function AdminOrders() {
                   Đặt lúc:{" "}
                   {new Date(selectedOrder.placed_at).toLocaleString("vi-VN")}
                 </p>
+              )}
+
+              {/* Shipping Address */}
+              {selectedOrder.shipping_address && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                    <MapPin size={14} className="inline mr-1" />
+                    Địa chỉ giao hàng
+                  </p>
+                  <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-1">
+                    <p className="font-medium text-gray-900">
+                      {selectedOrder.shipping_address.name}
+                    </p>
+                    <p className="text-gray-600">
+                      {selectedOrder.shipping_address.phone}
+                    </p>
+                    <p className="text-gray-600">
+                      {selectedOrder.shipping_address.line1}
+                      {selectedOrder.shipping_address.city
+                        ? `, ${selectedOrder.shipping_address.city}`
+                        : ""}
+                    </p>
+                    {selectedOrder.shipping_address.email && (
+                      <p className="text-gray-400 text-xs">
+                        {selectedOrder.shipping_address.email}
+                      </p>
+                    )}
+                    {selectedOrder.notes && (
+                      <p className="text-gray-400 text-xs mt-1 italic">
+                        Ghi chú: {selectedOrder.notes}
+                      </p>
+                    )}
+                  </div>
+                </div>
               )}
 
               {/* Update Status */}

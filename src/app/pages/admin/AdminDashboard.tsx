@@ -6,13 +6,10 @@ import {
   Calendar,
   Users,
   TrendingUp,
-  BarChart3
 } from "lucide-react";
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -102,7 +99,6 @@ export default function AdminDashboard() {
   const [revenue, setRevenue] = useState<RevenueResponse | null>(null);
   const [range, setRange] = useState(14);
   const [revData, setRevData] = useState<any[]>([]);
-  const [topProducts, setTopProducts] = useState<any[]>([]);
   const [ordersByStatus, setOrdersByStatus] = useState<OrdersByStatus | null>(
     null,
   );
@@ -124,29 +120,25 @@ export default function AdminDashboard() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      adminApi.revenue(range),
-      adminApi.topProducts(30, 10),
-      adminApi.ordersByStatus(),
-      adminApi.userEngagement(range),
-      adminApi.aiUsage(range),
+      adminApi.revenue(range).catch(() => null),
+      adminApi.ordersByStatus().catch(() => null),
+      adminApi.userEngagement(range).catch(() => null),
+      adminApi.aiUsage(range).catch(() => null),
     ])
-      .then(([r, tp, obs, ue, ai]) => {
-        setRevData(
-          (r.by_date || []).map((d: any) => ({
-            date: d.date.slice(5, 10),
-            revenue: d.revenue_vnd,
-            orders: d.orders,
-          })),
-        );
-        setTopProducts(
-          tp.map((p: any) => ({
-            name: p.name.length > 20 ? p.name.slice(0, 18) + "..." : p.name,
-            revenue: p.revenue_vnd,
-          })),
-        );
-        setOrdersByStatus(obs);
-        setEngagement(ue);
-        setAIUsage(ai);
+      .then(([r, obs, ue, ai]) => {
+        if (r) {
+          setRevData(
+            (r.by_date || []).map((d: any) => ({
+              date: d.date.slice(5, 10),
+              revenue: d.revenue_vnd,
+              orders: d.orders,
+            })),
+          );
+        }
+
+        if (obs) setOrdersByStatus(obs);
+        if (ue) setEngagement(ue);
+        if (ai) setAIUsage(ai);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -176,13 +168,6 @@ export default function AdminDashboard() {
       icon: TrendingUp,
       color: "#16a34a",
       bg: "rgba(22,163,74,0.08)",
-    },
-    {
-      label: "Sản phẩm bán chạy",
-      value: topProducts.length.toString(),
-      icon: BarChart3,
-      color: "#7c3aed",
-      bg: "rgba(124,58,237,0.08)",
     },
   ];
 
@@ -341,48 +326,6 @@ export default function AdminDashboard() {
                 strokeDasharray="4 4"
               />
             </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      {/* Top Products */}
-      {topProducts.length > 0 && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
-          <h3
-            className="font-semibold text-gray-900 mb-4"
-            style={{ fontFamily: "Lora, serif" }}
-          >
-            Sản phẩm bán chạy
-          </h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart
-              data={topProducts}
-              layout="vertical"
-              margin={{ left: 10, right: 30, top: 4, bottom: 4 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="#f1f5f9"
-                horizontal={false}
-              />
-              <XAxis
-                type="number"
-                tick={{ fontSize: 11, fill: "#94a3b8" }}
-                tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
-              />
-              <YAxis
-                dataKey="name"
-                type="category"
-                width={180}
-                tick={{ fontSize: 11, fill: "#64748b" }}
-              />
-              <Tooltip formatter={(v: number) => formatCurrency(v)} />
-              <Bar
-                dataKey="revenue"
-                radius={[0, 6, 6, 0]}
-                style={{ fill: "#cc323f" }}
-              />
-            </BarChart>
           </ResponsiveContainer>
         </div>
       )}

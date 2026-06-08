@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useParams, Navigate } from "react-router";
-import { ArrowLeft, Truck, Banknote, Package } from "lucide-react";
+import { ArrowLeft, Truck, Banknote, Package, MapPin } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../data";
 import { orderApi } from "@/features/orders/api";
@@ -161,6 +161,35 @@ export default function OrderDetail() {
               </div>
             </div>
 
+            {/* Items */}
+            {order.items && order.items.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
+                  Sản phẩm
+                </p>
+                <div className="divide-y divide-gray-100">
+                  {order.items.map((item: any, i: number) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between py-2.5"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">
+                          {item.name}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {formatCurrency(item.unit_price)} × {item.quantity}
+                        </p>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900 ml-4">
+                        {formatCurrency(item.line_total)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Timestamps */}
             <div className="grid grid-cols-2 gap-3 text-sm">
               {order.placed_at && (
@@ -198,6 +227,39 @@ export default function OrderDetail() {
             </div>
 
             {/* Shipping info */}
+            {order.shipping_address && (
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <MapPin size={16} style={{ color: "#cc323f" }} />
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Địa chỉ nhận hàng
+                  </span>
+                </div>
+                <p className="text-sm font-medium text-gray-800">
+                  {order.shipping_address.name || ""}
+                </p>
+                <p className="text-xs text-gray-600">
+                  {order.shipping_address.phone || ""}
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {order.shipping_address.line1}
+                  {order.shipping_address.city
+                    ? `, ${order.shipping_address.city}`
+                    : ""}
+                </p>
+                {order.shipping_address.email && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {order.shipping_address.email}
+                  </p>
+                )}
+                {order.notes && (
+                  <p className="text-xs text-gray-400 mt-1 italic">
+                    Ghi chú: {order.notes}
+                  </p>
+                )}
+              </div>
+            )}
+
             {order.carrier && (
               <div className="bg-gray-50 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-2">

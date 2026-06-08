@@ -18,7 +18,7 @@ interface CouponItem {
 const EMPTY_FORM = {
   code: "",
   discount_type: "percent" as const,
-  discount_value: 1000,
+  discount_value: 10,
   min_order_vnd: 0,
   max_uses: 100,
   starts_at: "",
@@ -183,14 +183,14 @@ export default function AdminCoupons() {
                       style={{ background: "#f0fdf4", color: "#16a34a" }}
                     >
                       {c.discount_type === "percent"
-                        ? `${c.discount_value / 100}%`
+                        ? `${c.discount_value}%`
                         : `${c.discount_value.toLocaleString()}₫`}
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-center hidden sm:table-cell">
                     <span className="text-gray-600 font-medium">
                       {c.discount_type === "percent"
-                        ? `${c.discount_value / 100}%`
+                        ? `${c.discount_value}%`
                         : `${c.discount_value.toLocaleString()}₫`}
                     </span>
                   </td>
@@ -281,7 +281,7 @@ export default function AdminCoupons() {
                 <div>
                   <label className="block text-sm text-gray-700 mb-1">
                     {form.discount_type === "percent"
-                      ? "Giá trị (bps, 1000 = 10%)"
+                      ? "Giá trị (%) (VD: 10 = 10%)"
                       : "Giá trị (₫)"}
                   </label>
                   <input
