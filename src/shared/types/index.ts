@@ -236,6 +236,7 @@ export interface OrderDetail {
   order_number: string;
   status: string;
   invoice_status: string;
+  payment_method?: string;
   subtotal_vnd: number;
   discount_vnd: number;
   vat_vnd: number;

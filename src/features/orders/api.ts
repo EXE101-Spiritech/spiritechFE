@@ -1,7 +1,18 @@
-import axiosClient from '@/shared/api/axiosClient';
-import type { OrderDetail, CancelOrderResponse } from '@/shared/types';
+import axiosClient from "@/shared/api/axiosClient";
+import type { OrderDetail, CancelOrderResponse } from "@/shared/types";
 
 export const orderApi = {
+  /** List my orders (from JWT) */
+  listMy: (params?: { page?: number; size?: number }) =>
+    axiosClient
+      .get<{
+        data: any[];
+        total: number;
+        page: number;
+        size: number;
+      }>("/v1/orders", { params })
+      .then((r) => r.data),
+
   /** Get order by ID */
   get: (id: string) =>
     axiosClient.get<OrderDetail>(`/v1/orders/${id}`).then((r) => r.data),
@@ -13,4 +24,4 @@ export const orderApi = {
       .then((r) => r.data),
 };
 
-export type { OrderDetail } from '@/shared/types';
+export type { OrderDetail } from "@/shared/types";

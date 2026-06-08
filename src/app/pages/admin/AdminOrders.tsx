@@ -288,6 +288,21 @@ export default function AdminOrders() {
                     >
                       {STATUS_LABEL[o.status] || o.status}
                     </span>
+                    <span
+                      className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono"
+                      style={{
+                        color:
+                          o.payment_method === "payos" ? "#7c3aed" : "#16a34a",
+                        background:
+                          o.payment_method === "payos" ? "#ede9fe" : "#f0fdf4",
+                      }}
+                    >
+                      {o.payment_method === "payos"
+                        ? "PayOS"
+                        : o.payment_method === "cod"
+                          ? "COD"
+                          : o.payment_method || ""}
+                    </span>
                   </td>
                   <td className="px-5 py-3.5 text-center text-xs text-gray-500">
                     {o.carrier ? `${o.carrier} · ${o.tracking || ""}` : "—"}
@@ -315,6 +330,49 @@ export default function AdminOrders() {
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {total > 20 && (
+          <div className="flex justify-center items-center gap-2 mt-4">
+            <button
+              disabled={page <= 1}
+              onClick={() => load(page - 1)}
+              className="px-3 py-1.5 rounded-lg text-xs border transition-colors disabled:opacity-30"
+              style={{
+                borderColor: "#e2e8f0",
+                color: page <= 1 ? "#94a3b8" : "#334155",
+              }}
+            >
+              Trước
+            </button>
+            {Array.from({ length: Math.ceil(total / 20) }, (_, i) => i + 1).map(
+              (p) => (
+                <button
+                  key={p}
+                  onClick={() => load(p)}
+                  className="w-8 h-8 rounded-lg text-xs font-medium transition-colors"
+                  style={{
+                    backgroundColor: p === page ? "#cc323f" : "transparent",
+                    color: p === page ? "white" : "#334155",
+                  }}
+                >
+                  {p}
+                </button>
+              ),
+            )}
+            <button
+              disabled={page >= Math.ceil(total / 20)}
+              onClick={() => load(page + 1)}
+              className="px-3 py-1.5 rounded-lg text-xs border transition-colors disabled:opacity-30"
+              style={{
+                borderColor: "#e2e8f0",
+                color: page >= Math.ceil(total / 20) ? "#94a3b8" : "#334155",
+              }}
+            >
+              Sau
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Order Management Modal */}

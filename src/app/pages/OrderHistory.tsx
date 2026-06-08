@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, Navigate } from "react-router";
 import { ChevronRight, Package, ArrowLeft } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { formatCurrency, getStatusLabel, getStatusColor, Order } from "../data";
-import { adminApi } from "@/features/admin/api";
+import { formatCurrency } from "../data";
+import { orderApi } from "@/features/orders/api";
 
 export default function OrderHistory() {
   const { isLoggedIn } = useAuth();
@@ -11,9 +11,9 @@ export default function OrderHistory() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminApi
-      .listOrders({ size: 50 })
-      .then((r: any) => setApiOrders(Array.isArray(r) ? r : r.data || []))
+    orderApi
+      .listMy({ size: 50 })
+      .then((r) => setApiOrders(r.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -162,6 +162,25 @@ export default function OrderHistory() {
                                 : order.status === "cancelled"
                                   ? "Đã hủy"
                                   : order.status}
+                    </span>
+                    <span
+                      className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono"
+                      style={{
+                        color:
+                          order.payment_method === "payos"
+                            ? "#7c3aed"
+                            : "#16a34a",
+                        background:
+                          order.payment_method === "payos"
+                            ? "#ede9fe"
+                            : "#f0fdf4",
+                      }}
+                    >
+                      {order.payment_method === "payos"
+                        ? "PayOS"
+                        : order.payment_method === "cod"
+                          ? "COD"
+                          : order.payment_method || ""}
                     </span>
                   </div>
                 </Link>
