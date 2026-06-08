@@ -46,7 +46,8 @@ export default function ComboDetail() {
         rating: 4.5,
         reviews: 0,
         badge: apiCombo.is_combo ? "Tiết kiệm" : undefined,
-        inStock: apiCombo.status === "active",
+        inStock: apiCombo.quantity > 0,
+        lowStock: apiCombo.quantity > 0 && apiCombo.quantity < 5,
         usageGuide: "",
       }
     : undefined;
@@ -194,9 +195,15 @@ export default function ComboDetail() {
                 {combo.occasion}
               </span>
               {combo.inStock ? (
-                <span className="bg-green-50 text-green-700 text-sm px-3 py-1 rounded-full">
-                  Còn hàng
-                </span>
+                combo.lowStock ? (
+                  <span className="bg-red-50 text-red-700 text-sm px-3 py-1 rounded-full flex items-center gap-1">
+                    🔥 Sắp hết hàng
+                  </span>
+                ) : (
+                  <span className="bg-green-50 text-green-700 text-sm px-3 py-1 rounded-full">
+                    Còn hàng
+                  </span>
+                )
               ) : (
                 <span className="bg-gray-100 text-gray-500 text-sm px-3 py-1 rounded-full">
                   Hết hàng

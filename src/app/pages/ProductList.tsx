@@ -58,7 +58,8 @@ export default function ProductList() {
         rating: 4.5,
         reviews: 0,
         badge: undefined,
-        inStock: p.status === "active",
+        inStock: p.quantity > 0,
+        lowStock: p.quantity > 0 && p.quantity < 5,
       }))
     : [];
   const filtered = displayProducts
@@ -196,12 +197,12 @@ export default function ProductList() {
                     alt={product.name}
                     className="w-full h-full object-contain scale-[1.08] group-hover:scale-[1.13] transition-transform duration-500"
                   />
-                  {product.badge && (
+                  {product.lowStock && (
                     <span
-                      className="absolute top-2 left-2 text-white text-xs px-2 py-0.5 rounded-full"
-                      style={{ backgroundColor: "#cc323f" }}
+                      className="absolute top-2 left-2 text-xs px-2 py-0.5 rounded-full flex items-center gap-1"
+                      style={{ backgroundColor: "#ff4444", color: "white" }}
                     >
-                      {product.badge}
+                      <span style={{ filter: "none" }}>🔥</span> Sắp hết
                     </span>
                   )}
                   {product.originalPrice && (

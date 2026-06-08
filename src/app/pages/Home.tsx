@@ -52,7 +52,8 @@ export default function Home() {
         rating: 4.5,
         reviews: 0,
         badge: apiCombos.length > 0 ? "Tiết kiệm" : undefined,
-        inStock: c.status === "active",
+        inStock: c.quantity > 0,
+        lowStock: c.quantity > 0 && c.quantity < 5,
         usageGuide: "",
       }))
     : null;

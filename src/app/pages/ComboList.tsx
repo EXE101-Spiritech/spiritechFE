@@ -61,7 +61,8 @@ export default function ComboList() {
         rating: 4.5,
         reviews: 0,
         badge: c.is_combo ? "Tiết kiệm" : undefined,
-        inStock: c.status === "active",
+        inStock: c.quantity > 0,
+        lowStock: c.quantity > 0 && c.quantity < 5,
         usageGuide: "",
       }))
     : [];
@@ -191,6 +192,14 @@ export default function ComboList() {
                     </span>
                   )}
 
+                  {combo.lowStock && (
+                    <span
+                      className="absolute top-3 left-3 text-xs px-2.5 py-1 rounded-full flex items-center gap-1"
+                      style={{ backgroundColor: "#ff4444", color: "white" }}
+                    >
+                      🔥 Sắp hết
+                    </span>
+                  )}
                   {!combo.inStock && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                       <span

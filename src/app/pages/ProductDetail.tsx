@@ -43,7 +43,8 @@ export default function ProductDetail() {
         rating: 4.5,
         reviews: 0,
         badge: undefined,
-        inStock: apiProduct.status === "active",
+        inStock: apiProduct.quantity > 0,
+        lowStock: apiProduct.quantity > 0 && apiProduct.quantity < 5,
         category: "",
       }
     : apiProduct === undefined
@@ -215,9 +216,15 @@ export default function ProductDetail() {
                 {product.category}
               </span>
               {product.inStock ? (
-                <span className="bg-green-50 text-green-700 text-sm px-3 py-1 rounded-full">
-                  Còn hàng
-                </span>
+                product.lowStock ? (
+                  <span className="bg-red-50 text-red-700 text-sm px-3 py-1 rounded-full flex items-center gap-1">
+                    🔥 Sắp hết hàng
+                  </span>
+                ) : (
+                  <span className="bg-green-50 text-green-700 text-sm px-3 py-1 rounded-full">
+                    Còn hàng
+                  </span>
+                )
               ) : (
                 <span className="bg-gray-100 text-gray-500 text-sm px-3 py-1 rounded-full">
                   Hết hàng
