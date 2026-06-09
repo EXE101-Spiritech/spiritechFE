@@ -478,6 +478,66 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {/* Page Views chart */}
+          {engagement?.page_views?.by_date &&
+            engagement.page_views.by_date.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3
+                  className="font-semibold text-gray-900 mb-4"
+                  style={{ fontFamily: "Lora, serif" }}
+                >
+                  Lượt xem trang theo ngày
+                </h3>
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart
+                    data={engagement.page_views.by_date.map((d) => ({
+                      date: d.date.slice(5, 10),
+                      views: d.count,
+                    }))}
+                    margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 11, fill: "#94a3b8" }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      domain={[0, "auto"]}
+                      tick={{ fontSize: 10, fill: "#94a3b8" }}
+                      axisLine={false}
+                      tickLine={false}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      content={({ active, payload, label }: any) =>
+                        active && payload && payload.length ? (
+                          <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-lg text-sm">
+                            <p className="text-gray-500 mb-1">{label}</p>
+                            <p
+                              className="font-semibold"
+                              style={{ color: "#2563eb" }}
+                            >
+                              {payload[0].value} lượt xem
+                            </p>
+                          </div>
+                        ) : null
+                      }
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="views"
+                      stroke="#2563eb"
+                      strokeWidth={2.5}
+                      dot={{ r: 3, fill: "#2563eb" }}
+                      animationDuration={300}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
           {/* AI Usage */}
           {aiUsage && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
