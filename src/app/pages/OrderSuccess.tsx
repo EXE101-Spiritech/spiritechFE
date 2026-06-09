@@ -720,7 +720,7 @@ export default function OrderSuccess() {
         >
           <p className="text-xs text-gray-400">
             🔒 Đơn hàng được bảo vệ bởi chính sách{" "}
-            <strong>đổi trả 7 ngày</strong> · Giao hàng toàn quốc
+            <strong>đổi trả 7 ngày</strong> · Giao hàng nội thành
           </p>
         </div>
       </div>
