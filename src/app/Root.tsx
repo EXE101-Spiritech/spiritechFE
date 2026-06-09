@@ -6,6 +6,7 @@ import { ChatBot } from "./components/ChatBot";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { HealthProvider } from "./context/HealthContext";
+import { track } from "@/features/products/tracking/api";
 
 // Pages that should not show footer or chat
 const NO_FOOTER_PATHS = ["/login", "/register", "/reset-password"];
@@ -14,6 +15,15 @@ function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
     window.scrollTo({ top: 0 });
+  }, [pathname]);
+  return null;
+}
+
+/** Fire page.viewed event on every route change */
+function PageViewTracker() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    track("page.viewed", { path: pathname });
   }, [pathname]);
   return null;
 }
@@ -30,6 +40,7 @@ export default function Root() {
         <CartProvider>
           <div className="min-h-screen flex flex-col">
             <ScrollToTop />
+            <PageViewTracker />
             <Navbar />
             <main className="flex-1">
               <Outlet />

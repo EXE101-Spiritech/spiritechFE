@@ -208,20 +208,25 @@ export const adminApi = {
       }>("/admin/combos", { params })
       .then((r) => r.data),
 
-  /** Create combo */
+  /** Create combo (combos are products with is_combo=true) */
   createCombo: (data: CreateProductReq) =>
-    axiosClient.post("/admin/combos", data).then((r) => r.data),
+    axiosClient.post("/admin/products", data).then((r) => r.data),
 
   /** Update combo */
   updateCombo: (id: string, data: Partial<CreateProductReq>) =>
-    axiosClient.put(`/admin/combos/${id}`, data).then((r) => r.data),
+    axiosClient.put(`/admin/products/${id}`, data).then((r) => r.data),
 
   /** Delete combo */
-  deleteCombo: (id: string) => axiosClient.delete(`/admin/combos/${id}`),
+  deleteCombo: (id: string) => axiosClient.delete(`/admin/products/${id}`),
   // ── Products (Admin) ───────────────────────────────────────────────────────
 
-  /** List all products (admin, paginated) */
-  listProducts: (params?: { status?: string; page?: number; size?: number }) =>
+  /** List all products (admin, paginated) — pass is_combo=false to exclude combos */
+  listProducts: (params?: {
+    status?: string;
+    page?: number;
+    size?: number;
+    is_combo?: boolean;
+  }) =>
     axiosClient
       .get<{
         data: any[];
@@ -230,6 +235,10 @@ export const adminApi = {
         total: number;
       }>("/admin/products", { params })
       .then((r) => r.data),
+  /** Get product by ID */
+  getProduct: (id: string) =>
+    axiosClient.get<any>(`/admin/products/${id}`).then((r) => r.data),
+
   /** Create product */
   createProduct: (data: CreateProductReq) =>
     axiosClient.post("/admin/products", data).then((r) => r.data),

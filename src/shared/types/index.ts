@@ -430,6 +430,11 @@ export interface CartAbandonment {
 
 export interface UserEngagement {
   health_pings: number;
+  page_views?: {
+    total: number;
+    daily_avg: number;
+    by_date: { date: string; count: number }[];
+  };
   searches: SearchAnalytics;
   add_to_carts: EngagementData;
   cart_abandonment: CartAbandonment;
@@ -458,4 +463,5 @@ export interface PaginationParams {
   size?: number;
   limit?: number;
   cursor?: string;
+  is_combo?: boolean;
 }

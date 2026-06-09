@@ -32,7 +32,7 @@ export default function ProductList() {
   const load = (p: number) => {
     setLoading(true);
     productApi
-      .list({ page: p, size: PAGE_SIZE })
+      .list({ page: p, size: PAGE_SIZE, is_combo: false })
       .then((r) => {
         setApiProducts(r.data);
         setTotal(r.total);

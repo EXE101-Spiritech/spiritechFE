@@ -119,7 +119,7 @@ export default function AdminProducts() {
   const load = (p: number) => {
     setLoading(true);
     adminApi
-      .listProducts({ page: p, size: ADMIN_PROD_PAGE_SIZE })
+      .listProducts({ page: p, size: ADMIN_PROD_PAGE_SIZE, is_combo: false })
       .then((r) => {
         const apiProducts = r.data.map((prod: any) => ({
           id: prod.slug,
@@ -191,29 +191,43 @@ export default function AdminProducts() {
     setModalOpen(true);
   };
 
-  const openEdit = (p: AdminProduct) => {
-    setEditingId(p.productId || p.id || "");
-    setForm({
-      name: p.name,
-      price: p.price,
-      status: p.status,
-      images: p.images || (p.image ? [p.image] : []),
-      description: p.description,
-    });
+  const openEdit = async (p: AdminProduct) => {
+    const id = p.productId || p.id || "";
+    setEditingId(id);
+    // Fetch fresh data from server
+    try {
+      const prod = await adminApi.getProduct(id);
+      setForm({
+        name: prod.name || p.name,
+        price: prod.base_price_vnd ?? p.price,
+        status: prod.status || p.status,
+        images: prod.images || p.images || (p.image ? [p.image] : []),
+        description: prod.description || p.description,
+      });
+    } catch {
+      // Fallback to list data
+      setForm({
+        name: p.name,
+        price: p.price,
+        status: p.status,
+        images: p.images || (p.image ? [p.image] : []),
+        description: p.description,
+      });
+    }
     setModalOpen(true);
   };
 
   const handleSave = async () => {
     if (!form.name.trim() || !form.price) return;
     const slug = makeSlug(form.name);
-    const data = {
-      slug,
+    const buildData = (s: string) => ({
+      slug: s,
       name: form.name,
       description: form.description || undefined,
       base_price_vnd: form.price,
       images: form.images || [],
       status: form.status,
-    };
+    });
 
     try {
       if (editingId) {
@@ -221,18 +235,30 @@ export default function AdminProducts() {
           (p) => p.id === editingId || p.productId === editingId,
         );
         await adminApi.updateProduct(editingId, {
-          ...data,
+          ...buildData(slug),
           quantity: current?.stock ?? 0,
         });
         setProducts((ps) =>
           ps.map((p) =>
             p.id === editingId || p.productId === editingId
-              ? { ...p, ...data, price: data.base_price_vnd }
+              ? {
+                  ...p,
+                  ...buildData(slug),
+                  price: buildData(slug).base_price_vnd,
+                }
               : p,
           ),
         );
       } else {
-        const res = await adminApi.createProduct(data);
+        // Try clean slug first; if conflict, retry with unique suffix
+        let res;
+        try {
+          res = await adminApi.createProduct(buildData(slug));
+        } catch {
+          const uniqueSlug =
+            slug + "-" + Math.random().toString(36).slice(2, 6);
+          res = await adminApi.createProduct(buildData(uniqueSlug));
+        }
         const newId = res.slug || res.product_id || slug;
         setProducts((ps) => [
           ...ps,
