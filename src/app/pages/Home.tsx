@@ -95,8 +95,8 @@ export default function Home() {
               style={{ color: "rgba(255,255,255,0.85)" }}
             >
               <p className="text-base sm:text-lg leading-relaxed pl-[0px] pr-[14px] py-[0px]">
-                Cung cấp mâm cúng, combo lễ vật đầy đủ theo phong tục truyền
-                thống Việt Nam.
+                Cung cấp mâm cúng, combo lễ vật đầy đủ chuẩn theo phong tục
+                truyền thống Việt Nam.
               </p>
               <p className="text-base sm:text-lg leading-relaxed">
                 Đặt hàng dễ dàng — giao tận nơi.
@@ -193,7 +193,7 @@ export default function Home() {
                   fontSize: "1.8rem",
                 }}
               >
-                Mâm Cúng Trọn Bộ
+                Combo cho hôm nay
               </h2>
             </div>
             <Link
