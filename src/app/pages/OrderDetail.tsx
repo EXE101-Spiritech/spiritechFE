@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useParams, Navigate } from "react-router";
-import { ArrowLeft, Truck, Banknote, Package, MapPin } from "lucide-react";
+import {
+  ArrowLeft,
+  Truck,
+  Banknote,
+  Package,
+  MapPin,
+  CheckCircle,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../data";
 import { orderApi } from "@/features/orders/api";
@@ -274,6 +281,48 @@ export default function OrderDetail() {
                 <p className="text-xs text-gray-500 font-mono">
                   {order.tracking || "—"}
                 </p>
+              </div>
+            )}
+
+            {/* Delivery confirmation — user */}
+            {order.status === "shipped" &&
+              !order.admin_delivery_at &&
+              !order.delivered_at && (
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-center">
+                  <p className="text-sm font-medium text-gray-600 mb-1">
+                    🚚 Đơn hàng đang được giao
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Đang chờ xác nhận giao hàng từ quản trị viên.
+                  </p>
+                </div>
+              )}
+            {order.admin_delivery_at && !order.delivered_at && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-center">
+                <p className="text-sm font-medium text-amber-800 mb-1">
+                  📦 Admin đã xác nhận giao hàng
+                </p>
+                <p className="text-xs text-amber-600 mb-4">
+                  Vui lòng xác nhận đã nhận hàng. Đơn sẽ tự động hoàn tất sau 15
+                  phút.
+                </p>
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await orderApi.confirmDelivery(order.id);
+                      setOrder((prev: any) => ({
+                        ...prev,
+                        status: res.status,
+                        delivered_at: res.delivered_at,
+                      }));
+                    } catch {}
+                  }}
+                  className="px-6 py-2.5 rounded-xl text-white text-sm font-medium"
+                  style={{ backgroundColor: "#16a34a" }}
+                >
+                  <CheckCircle className="w-4 h-4 inline mr-1.5" />
+                  Đã nhận hàng
+                </button>
               </div>
             )}
           </div>

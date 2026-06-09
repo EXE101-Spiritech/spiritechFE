@@ -246,6 +246,7 @@ export interface OrderDetail {
   paid_at?: string;
   shipped_at?: string;
   delivered_at?: string;
+  admin_delivery_at?: string;
   carrier?: string;
   tracking?: string;
   notes?: string;

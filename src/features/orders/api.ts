@@ -22,6 +22,16 @@ export const orderApi = {
     axiosClient
       .post<CancelOrderResponse>(`/v1/orders/${id}/cancel`)
       .then((r) => r.data),
+
+  /** Confirm delivery (user) */
+  confirmDelivery: (id: string) =>
+    axiosClient
+      .post<{
+        order_id: string;
+        status: string;
+        delivered_at: string;
+      }>(`/v1/orders/${id}/confirm-delivery`)
+      .then((r) => r.data),
 };
 
 export type { OrderDetail } from "@/shared/types";

@@ -176,7 +176,18 @@ export const adminApi = {
       }>(`/admin/orders/${orderId}/shipping`, data)
       .then((r) => r.data),
 
-  // ── Combos (Admin) ─────────────────────────────────────────────────────────
+  /** Confirm delivery (admin) */
+  confirmDelivery: (
+    orderId: string,
+    params?: { carrier?: string; tracking?: string },
+  ) =>
+    axiosClient
+      .post<{
+        order_id: string;
+        admin_delivery_at: string;
+        message: string;
+      }>(`/admin/orders/${orderId}/confirm-delivery`, null, { params })
+      .then((r) => r.data),
 
   /** List combos (admin, paginated) */
   listCombos: (params?: {

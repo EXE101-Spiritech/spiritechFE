@@ -18,7 +18,6 @@ const STATUS_OPTIONS = [
   { value: "confirmed", label: "Đã xác nhận" },
   { value: "fulfilling", label: "Đang chuẩn bị" },
   { value: "shipped", label: "Đã giao vận chuyển" },
-  { value: "delivered", label: "Đã nhận hàng" },
   { value: "cancelled", label: "Đã hủy" },
   { value: "refunded", label: "Đã hoàn tiền" },
   { value: "failed", label: "Thanh toán thất bại" },
@@ -64,6 +63,7 @@ export default function AdminOrders() {
   const [shippingTracking, setShippingTracking] = useState("");
   const [updating, setUpdating] = useState(false);
   const [updateMsg, setUpdateMsg] = useState("");
+  const [deliveryConfirmed, setDeliveryConfirmed] = useState(false);
   const [revealedPhones, setRevealedPhones] = useState<Set<string>>(new Set());
 
   const togglePhone = (id: string) => {
@@ -109,6 +109,7 @@ export default function AdminOrders() {
     setShippingCarrier(o.carrier || "");
     setShippingTracking(o.tracking || "");
     setUpdateMsg("");
+    setDeliveryConfirmed(!!o.admin_delivery_at);
   };
 
   const updateStatus = async () => {
@@ -512,6 +513,63 @@ export default function AdminOrders() {
                   </button>
                 </div>
               </div>
+
+              {/* Xác nhận giao hàng (admin) — only when shipped */}
+              {selectedOrder.status === "shipped" && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                    <CheckCircle size={14} className="inline mr-1" />
+                    Xác nhận giao hàng
+                  </p>
+                  {deliveryConfirmed ? (
+                    <div className="p-3 bg-gray-50 rounded-xl text-center">
+                      <p className="text-xs text-gray-500">
+                        ✅ Đã xác nhận giao hàng
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Chờ người dùng xác nhận đã nhận hàng.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-xs text-gray-400 mb-2">
+                        Xác nhận đã giao cho đơn vị vận chuyển. Người dùng sẽ
+                        xác nhận đã nhận hàng.
+                      </p>
+                      <button
+                        onClick={async () => {
+                          setUpdating(true);
+                          try {
+                            const res = await adminApi.confirmDelivery(
+                              selectedOrder.id,
+                              {
+                                carrier: shippingCarrier || undefined,
+                                tracking: shippingTracking || undefined,
+                              },
+                            );
+                            setDeliveryConfirmed(true);
+                            setSelectedOrder((prev: any) => ({
+                              ...prev,
+                              admin_delivery_at: res.admin_delivery_at,
+                            }));
+                            setUpdateMsg("Đã xác nhận giao hàng thành công!");
+                          } catch (err: any) {
+                            setUpdateMsg(err?.response?.data?.message || "Lỗi");
+                          }
+                          setUpdating(false);
+                        }}
+                        disabled={updating}
+                        className="w-full py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-40"
+                        style={{
+                          backgroundColor: updating ? "#9ca3af" : "#16a34a",
+                        }}
+                      >
+                        {updating ? "Đang xử lý..." : "Xác nhận giao hàng"}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* Update Shipping */}
               <div>
