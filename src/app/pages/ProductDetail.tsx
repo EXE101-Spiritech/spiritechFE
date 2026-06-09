@@ -234,6 +234,11 @@ export default function ProductDetail() {
                   Hết hàng
                 </span>
               )}
+              {apiProduct?.quantity !== undefined && (
+                <span className="text-xs text-gray-400 ml-2">
+                  {apiProduct.quantity} sản phẩm có sẵn
+                </span>
+              )}
             </div>
 
             <h1

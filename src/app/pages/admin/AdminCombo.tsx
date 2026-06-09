@@ -10,6 +10,7 @@ interface ComboItem {
   images?: string[];
   price: number;
   originalPrice?: number;
+  stock: number;
   status: string;
 }
 
@@ -39,6 +40,12 @@ export default function AdminCombo() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [imageUrl, setImageUrl] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [restockModal, setRestockModal] = useState<{
+    productId: string;
+    name: string;
+    currentQty: number;
+  } | null>(null);
+  const [restockQty, setRestockQty] = useState(10);
 
   useEffect(() => {
     adminApi
@@ -52,6 +59,7 @@ export default function AdminCombo() {
             image: p.images?.[0] || "",
             price: p.base_price_vnd,
             originalPrice: p.combo_original_price_vnd,
+            stock: p.quantity ?? 0,
             status: p.status,
           })),
         );
@@ -96,7 +104,11 @@ export default function AdminCombo() {
 
     try {
       if (editingId) {
-        await adminApi.updateCombo(editingId, data);
+        const current = combos.find((c) => c.id === editingId);
+        await adminApi.updateCombo(editingId, {
+          ...data,
+          quantity: current?.stock ?? 0,
+        });
         setCombos((prev) =>
           prev.map((c) =>
             c.id === editingId
@@ -114,7 +126,7 @@ export default function AdminCombo() {
           ),
         );
       } else {
-        const res = await adminApi.createCombo(data as any);
+        const res = await adminApi.createCombo(data);
         const newId = res.product_id || res.id || slug;
         setCombos((prev) => [
           ...prev,
@@ -126,6 +138,7 @@ export default function AdminCombo() {
             image: form.images?.[0] || "",
             price: form.price,
             originalPrice: form.originalPrice || undefined,
+            stock: 0,
             status: form.status,
           },
         ]);
@@ -134,6 +147,16 @@ export default function AdminCombo() {
     } catch (err: any) {
       alert(err?.response?.data?.message || "Loi tao combo. Vui long thu lai.");
     }
+  };
+
+  const adjustStock = (productId: string, delta: number) => {
+    const item = combos.find((c) => c.id === productId);
+    if (!item) return;
+    const newQty = Math.max(0, item.stock + delta);
+    adminApi.updateStock(productId, newQty).catch(() => {});
+    setCombos((prev) =>
+      prev.map((c) => (c.id === productId ? { ...c, stock: newQty } : c)),
+    );
   };
 
   const handleDelete = (id: string) => {
@@ -186,6 +209,9 @@ export default function AdminCombo() {
                 </th>
                 <th className="text-center px-5 py-3.5 text-gray-500 font-medium hidden sm:table-cell">
                   Giá combo
+                </th>
+                <th className="text-right px-5 py-3.5 text-gray-500 font-medium hidden md:table-cell">
+                  Tồn kho
                 </th>
                 <th className="text-center px-5 py-3.5 text-gray-500 font-medium hidden md:table-cell">
                   Trạng thái
@@ -242,6 +268,47 @@ export default function AdminCombo() {
                     >
                       {c.price.toLocaleString()}₫
                     </span>
+                  </td>
+                  <td className="px-5 py-3.5 text-right text-gray-600 hidden md:table-cell">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => adjustStock(c.id, -1)}
+                        className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 text-xs"
+                      >
+                        −
+                      </button>
+                      <span
+                        className={`inline-block w-8 text-center text-sm font-medium ${
+                          c.stock === 0
+                            ? "text-red-600"
+                            : c.stock < 10
+                              ? "text-amber-600"
+                              : "text-gray-900"
+                        }`}
+                      >
+                        {c.stock}
+                      </span>
+                      <button
+                        onClick={() => adjustStock(c.id, 1)}
+                        className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 text-xs"
+                      >
+                        +
+                      </button>
+                      <button
+                        onClick={() => {
+                          setRestockModal({
+                            productId: c.id,
+                            name: c.name,
+                            currentQty: c.stock,
+                          });
+                          setRestockQty(10);
+                        }}
+                        className="ml-1 px-1.5 py-1 rounded text-xs font-medium text-white"
+                        style={{ backgroundColor: "#16a34a" }}
+                      >
+                        Nhập
+                      </button>
+                    </div>
                   </td>
                   <td className="px-5 py-3.5 text-center hidden md:table-cell">
                     {c.status === "active" ? (
@@ -489,6 +556,85 @@ export default function AdminCombo() {
                 style={{ background: "#cc323f" }}
               >
                 Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Restock Modal */}
+      {restockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h3
+              className="font-semibold text-gray-900 mb-1"
+              style={{ fontFamily: "Lora, serif" }}
+            >
+              Nhập kho
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">{restockModal.name}</p>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs text-gray-500">Tồn hiện tại:</span>
+              <span className="font-semibold">{restockModal.currentQty}</span>
+            </div>
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={() => setRestockQty((q) => Math.max(1, q - 10))}
+                className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50"
+              >
+                −10
+              </button>
+              <input
+                type="number"
+                value={restockQty}
+                min={1}
+                onChange={(e) => setRestockQty(Math.max(1, +e.target.value))}
+                className="flex-1 text-center border border-gray-200 rounded-xl py-2.5 text-lg font-semibold focus:outline-none"
+              />
+              <button
+                onClick={() => setRestockQty((q) => q + 10)}
+                className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50"
+              >
+                +10
+              </button>
+            </div>
+            <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+              <span>Sau khi nhập:</span>
+              <span className="font-semibold text-gray-900">
+                {restockModal.currentQty + restockQty}
+              </span>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRestockModal(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await adminApi.updateStock(
+                      restockModal.productId,
+                      restockModal.currentQty + restockQty,
+                    );
+                    setCombos((prev) =>
+                      prev.map((c) =>
+                        c.id === restockModal.productId
+                          ? {
+                              ...c,
+                              stock: restockModal.currentQty + restockQty,
+                            }
+                          : c,
+                      ),
+                    );
+                  } catch {}
+                  setRestockModal(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl text-white text-sm font-medium"
+                style={{ background: "#16a34a" }}
+              >
+                Xác nhận nhập
               </button>
             </div>
           </div>

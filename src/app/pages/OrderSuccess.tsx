@@ -252,23 +252,6 @@ export default function OrderSuccess() {
     items,
   } = state;
 
-  // ETA
-  const eta = new Date();
-  if (shippingMethod === "sameday") {
-    eta.setHours(eta.getHours() + 4);
-  } else {
-    eta.setDate(eta.getDate() + SHIPPING_META[shippingMethod].daysMax);
-  }
-  const etaStr =
-    shippingMethod === "sameday"
-      ? `Hôm nay trước ${eta.getHours()}:00`
-      : eta.toLocaleDateString("vi-VN", {
-          weekday: "long",
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        });
-
   const copyOrderId = () => {
     const el = document.createElement("textarea");
     el.value = orderId;
@@ -557,18 +540,6 @@ export default function OrderSuccess() {
                 "{shippingInfo.notes}"
               </p>
             )}
-            <div className="mt-4 pt-3 border-t border-gray-100">
-              <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
-                {SHIPPING_META[shippingMethod].icon}
-                <span>{SHIPPING_META[shippingMethod].label}</span>
-              </div>
-              <p
-                className="text-sm"
-                style={{ color: "#16a34a", fontWeight: 700 }}
-              >
-                🚚 Dự kiến: {etaStr}
-              </p>
-            </div>
           </div>
 
           {/* Payment card */}

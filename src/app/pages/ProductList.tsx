@@ -62,6 +62,7 @@ export default function ProductList() {
         badge: undefined,
         inStock: p.quantity > 0,
         lowStock: p.quantity > 0 && p.quantity < 5,
+        quantity: p.quantity ?? 0,
       }))
     : [];
   const filtered = displayProducts

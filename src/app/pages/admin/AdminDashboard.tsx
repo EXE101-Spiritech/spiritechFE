@@ -210,7 +210,7 @@ export default function AdminDashboard() {
           <MetricCard
             icon={DollarSign}
             label="Doanh thu đã thu"
-            sub="Từ payment captured"
+            sub="Từ cổng PAYOS"
             value={
               formatCurrency(dash.total_revenue_vnd).replace("₫", "") + "₫"
             }

@@ -170,6 +170,12 @@ export default function AdminProducts() {
   const [form, setForm] = useState<any>(EMPTY_FORM);
   const [imageUrl, setImageUrl] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [restockModal, setRestockModal] = useState<{
+    productId: string;
+    name: string;
+    currentQty: number;
+  } | null>(null);
+  const [restockQty, setRestockQty] = useState(10);
 
   const allCats = ["Tất cả", ...categories.map((c) => c.Name)];
 
@@ -186,7 +192,7 @@ export default function AdminProducts() {
   };
 
   const openEdit = (p: AdminProduct) => {
-    setEditingId(p.productId || p.id);
+    setEditingId(p.productId || p.id || "");
     setForm({
       name: p.name,
       price: p.price,
@@ -199,53 +205,63 @@ export default function AdminProducts() {
 
   const handleSave = async () => {
     if (!form.name.trim() || !form.price) return;
-    if (editingId) {
-      const slug = makeSlug(form.name);
-      adminApi
-        .updateProduct(editingId || "", {
-          slug,
-          name: form.name,
-          description: form.description || undefined,
-          base_price_vnd: form.price,
-          images: form.images || [],
-          status: form.status,
-        })
-        .catch(() => {});
-      setProducts((ps) =>
-        ps.map((p) =>
-          p.id === editingId || p.productId === editingId
-            ? { ...p, ...form }
-            : p,
-        ),
-      );
-    } else {
-      const slug = makeSlug(form.name);
-      adminApi
-        .createProduct({
-          slug,
-          name: form.name,
-          base_price_vnd: form.price,
-          images: form.images || [],
-        })
-        .then((res: any) => {
-          const newId = res.slug || res.product_id || slug;
-          setProducts((ps) => [
-            ...ps,
-            { id: newId, productId: res.product_id, ...form },
-          ]);
-        })
-        .catch(() => {
-          const newId = "p" + Date.now();
-          setProducts((ps) => [...ps, { id: newId, ...form }]);
+    const slug = makeSlug(form.name);
+    const data = {
+      slug,
+      name: form.name,
+      description: form.description || undefined,
+      base_price_vnd: form.price,
+      images: form.images || [],
+      status: form.status,
+    };
+
+    try {
+      if (editingId) {
+        const current = products.find(
+          (p) => p.id === editingId || p.productId === editingId,
+        );
+        await adminApi.updateProduct(editingId, {
+          ...data,
+          quantity: current?.stock ?? 0,
         });
+        setProducts((ps) =>
+          ps.map((p) =>
+            p.id === editingId || p.productId === editingId
+              ? { ...p, ...data, price: data.base_price_vnd }
+              : p,
+          ),
+        );
+      } else {
+        const res = await adminApi.createProduct(data);
+        const newId = res.slug || res.product_id || slug;
+        setProducts((ps) => [
+          ...ps,
+          {
+            id: newId,
+            productId: res.product_id,
+            name: form.name,
+            price: form.price,
+            status: form.status,
+            images: form.images || [],
+            image: form.images?.[0] || "",
+            description: form.description,
+            category: "",
+            stock: 0,
+          },
+        ]);
+      }
+      setModalOpen(false);
+    } catch (err: any) {
+      alert(
+        err?.response?.data?.message || "Loi luu san pham. Vui long thu lai.",
+      );
     }
-    setModalOpen(false);
   };
 
   const handleDelete = async (id: string) => {
     const item = products.find((p) => p.id === id);
     try {
-      await adminApi.deleteProduct(item?.productId || id);
+      await adminApi.deleteProduct(item?.productId || id || "");
       setProducts((ps) => ps.filter((p) => p.id !== id));
       setDeleteId(null);
     } catch (err: any) {
@@ -253,12 +269,25 @@ export default function AdminProducts() {
     }
   };
 
+  const adjustStock = (productId: string | undefined, delta: number) => {
+    if (!productId) return;
+    const item = products.find((p) => p.productId === productId);
+    if (!item) return;
+    const newQty = Math.max(0, item.stock + delta);
+    adminApi.updateStock(productId, newQty).catch(() => {});
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.productId === productId ? { ...p, stock: newQty } : p,
+      ),
+    );
+  };
+
   const toggleStatus = (id: string) => {
     const item = products.find((p) => p.id === id);
     if (!item) return;
     const newStatus = item.status === "active" ? "hidden" : "active";
     adminApi
-      .updateProduct(item.productId || id, { status: newStatus })
+      .updateProduct(item.productId || id || "", { status: newStatus })
       .catch(() => {});
     setProducts((ps) =>
       ps.map((p) => (p.id === id ? { ...p, status: newStatus } : p)),
@@ -376,11 +405,45 @@ export default function AdminProducts() {
                     {formatCurrency(p.price)}
                   </td>
                   <td className="px-5 py-3.5 text-right text-gray-600 hidden md:table-cell">
-                    <span
-                      className={p.stock < 10 ? "text-red-500 font-medium" : ""}
-                    >
-                      {p.stock}
-                    </span>
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => adjustStock(p.productId, -1)}
+                        className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 text-xs"
+                      >
+                        −
+                      </button>
+                      <span
+                        className={`inline-block w-8 text-center text-sm font-medium ${
+                          p.stock === 0
+                            ? "text-red-600"
+                            : p.stock < 10
+                              ? "text-amber-600"
+                              : "text-gray-900"
+                        }`}
+                      >
+                        {p.stock}
+                      </span>
+                      <button
+                        onClick={() => adjustStock(p.productId, 1)}
+                        className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 text-xs"
+                      >
+                        +
+                      </button>
+                      <button
+                        onClick={() => {
+                          setRestockModal({
+                            productId: p.productId || "",
+                            name: p.name,
+                            currentQty: p.stock,
+                          });
+                          setRestockQty(10);
+                        }}
+                        className="ml-1 px-1.5 py-1 rounded text-xs font-medium text-white"
+                        style={{ backgroundColor: "#16a34a" }}
+                      >
+                        Nhập
+                      </button>
+                    </div>
                   </td>
                   <td className="px-5 py-3.5 text-center">
                     <button
@@ -692,6 +755,85 @@ export default function AdminProducts() {
                 style={{ background: "#cc323f" }}
               >
                 Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Restock Modal */}
+      {restockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h3
+              className="font-semibold text-gray-900 mb-1"
+              style={{ fontFamily: "Lora, serif" }}
+            >
+              Nhập kho
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">{restockModal.name}</p>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs text-gray-500">Tồn hiện tại:</span>
+              <span className="font-semibold">{restockModal.currentQty}</span>
+            </div>
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={() => setRestockQty((q) => Math.max(1, q - 10))}
+                className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50"
+              >
+                −10
+              </button>
+              <input
+                type="number"
+                value={restockQty}
+                min={1}
+                onChange={(e) => setRestockQty(Math.max(1, +e.target.value))}
+                className="flex-1 text-center border border-gray-200 rounded-xl py-2.5 text-lg font-semibold focus:outline-none"
+              />
+              <button
+                onClick={() => setRestockQty((q) => q + 10)}
+                className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50"
+              >
+                +10
+              </button>
+            </div>
+            <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+              <span>Sau khi nhập:</span>
+              <span className="font-semibold text-gray-900">
+                {restockModal.currentQty + restockQty}
+              </span>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRestockModal(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await adminApi.updateStock(
+                      restockModal.productId,
+                      restockModal.currentQty + restockQty,
+                    );
+                    setProducts((prev) =>
+                      prev.map((p) =>
+                        p.productId === restockModal.productId
+                          ? {
+                              ...p,
+                              stock: restockModal.currentQty + restockQty,
+                            }
+                          : p,
+                      ),
+                    );
+                  } catch {}
+                  setRestockModal(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl text-white text-sm font-medium"
+                style={{ background: "#16a34a" }}
+              >
+                Xác nhận nhập
               </button>
             </div>
           </div>

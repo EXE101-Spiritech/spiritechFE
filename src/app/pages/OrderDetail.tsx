@@ -217,7 +217,7 @@ export default function OrderDetail() {
               )}
               {order.shipped_at && (
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-500 mb-0.5">Giao hàng</p>
+                  <p className="text-xs text-gray-500 mb-0.5">Giao ĐVVC</p>
                   <p className="font-medium">
                     {new Date(order.shipped_at).toLocaleString("vi-VN")}
                   </p>

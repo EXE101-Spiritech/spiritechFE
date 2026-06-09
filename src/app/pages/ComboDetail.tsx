@@ -213,6 +213,11 @@ export default function ComboDetail() {
                   Hết hàng
                 </span>
               )}
+              {apiCombo?.quantity !== undefined && (
+                <span className="text-xs text-gray-400 ml-2">
+                  {apiCombo.quantity} sản phẩm có sẵn
+                </span>
+              )}
             </div>
 
             <h1

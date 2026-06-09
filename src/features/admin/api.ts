@@ -23,6 +23,8 @@ export interface CreateProductReq {
   status?: string;
   is_combo?: boolean;
   combo_original_price_vnd?: number;
+  category_id?: string;
+  quantity?: number;
 }
 
 export interface AddVariantReq {
@@ -207,12 +209,12 @@ export const adminApi = {
       .then((r) => r.data),
 
   /** Create combo */
-  createCombo: (data: ComboFormData) =>
+  createCombo: (data: CreateProductReq) =>
     axiosClient.post("/admin/combos", data).then((r) => r.data),
 
   /** Update combo */
-  updateCombo: (id: string, data: Partial<ComboFormData>) =>
-    axiosClient.patch(`/admin/combos/${id}`, data).then((r) => r.data),
+  updateCombo: (id: string, data: Partial<CreateProductReq>) =>
+    axiosClient.put(`/admin/combos/${id}`, data).then((r) => r.data),
 
   /** Delete combo */
   deleteCombo: (id: string) => axiosClient.delete(`/admin/combos/${id}`),
