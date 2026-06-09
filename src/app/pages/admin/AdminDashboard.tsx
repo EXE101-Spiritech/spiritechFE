@@ -18,18 +18,15 @@ import {
 } from "recharts";
 import { formatCurrency } from "../../data/index";
 import { adminApi } from "@/features/admin/api";
-import type {
-  AdminDashboard,
-  RevenueResponse,
-  OrdersByStatus,
-  UserEngagement,
-  AIUsage,
-} from "@/shared/types";
+import type { AdminDashboard, UserEngagement, AIUsage } from "@/shared/types";
 
 const RANGE_OPTIONS = [
   { label: "7 ngày", value: 7 },
   { label: "14 ngày", value: 14 },
   { label: "30 ngày", value: 30 },
+  { label: "45 ngày", value: 45 },
+  { label: "60 ngày", value: 60 },
+  { label: "90 ngày", value: 90 },
 ];
 
 const ORDER_STATUS_COLORS: Record<string, string> = {
@@ -96,12 +93,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function AdminDashboard() {
   const [dash, setDash] = useState<AdminDashboard | null>(null);
-  const [revenue, setRevenue] = useState<RevenueResponse | null>(null);
+
   const [range, setRange] = useState(14);
   const [revData, setRevData] = useState<any[]>([]);
-  const [ordersByStatus, setOrdersByStatus] = useState<OrdersByStatus | null>(
-    null,
-  );
+
   const [engagement, setEngagement] = useState<UserEngagement | null>(null);
   const [aiUsage, setAIUsage] = useState<AIUsage | null>(null);
   const [loading, setLoading] = useState(true);
@@ -111,65 +106,53 @@ export default function AdminDashboard() {
       .dashboard()
       .then(setDash)
       .catch(() => {});
-    adminApi
-      .revenue(14)
-      .then(setRevenue)
-      .catch(() => {});
   }, []);
 
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      adminApi.revenue(range).catch(() => null),
-      adminApi.ordersByStatus().catch(() => null),
+      adminApi.revenue({ days: range, period: "daily" }).catch(() => null),
       adminApi.userEngagement(range).catch(() => null),
       adminApi.aiUsage(range).catch(() => null),
     ])
-      .then(([r, obs, ue, ai]) => {
-        if (r) {
-          setRevData(
-            (r.by_date || []).map((d: any) => ({
-              date: d.date.slice(5, 10),
-              revenue: d.revenue_vnd,
-              orders: d.orders,
-            })),
-          );
+      .then(([r, ue, ai]) => {
+        if (r && Array.isArray(r)) {
+          // Build a map of API data keyed by date
+          const dataMap = new Map<
+            string,
+            { revenue: number; orders: number }
+          >();
+          r.forEach((d: any) => {
+            dataMap.set(d.date, {
+              revenue: d.revenue_vnd || 0,
+              orders: d.orders || 0,
+            });
+          });
+
+          // Fill in all dates in range with zeros for missing ones
+          const filled: { date: string; revenue: number; orders: number }[] =
+            [];
+          const today = new Date();
+          for (let i = range - 1; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            const key = d.toISOString().slice(0, 10);
+            const existing = dataMap.get(key);
+            filled.push({
+              date: key.slice(5, 10),
+              revenue: existing?.revenue || 0,
+              orders: existing?.orders || 0,
+            });
+          }
+          setRevData(filled);
         }
 
-        if (obs) setOrdersByStatus(obs);
         if (ue) setEngagement(ue);
         if (ai) setAIUsage(ai);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [range]);
-
-  const totalRevenue = revData.reduce((s, d) => s + d.revenue, 0);
-  const totalOrders = revData.reduce((s, d) => s + d.orders, 0);
-  const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-  const statCards = [
-    {
-      label: `Doanh thu (${range} ngày)`,
-      value: formatCurrency(totalRevenue),
-      icon: DollarSign,
-      color: "#cc323f",
-      bg: "rgba(204,50,63,0.08)",
-    },
-    {
-      label: "Tổng đơn hàng",
-      value: totalOrders.toLocaleString(),
-      icon: ShoppingCart,
-      color: "#2563eb",
-      bg: "rgba(37,99,235,0.08)",
-    },
-    {
-      label: "Giá trị đơn TB",
-      value: formatCurrency(avgOrderValue),
-      icon: TrendingUp,
-      color: "#16a34a",
-      bg: "rgba(22,163,74,0.08)",
-    },
-  ];
 
   if (loading && !dash)
     return (
@@ -259,29 +242,6 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        {statCards.map((card, i) => (
-          <div
-            key={i}
-            className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{ background: card.bg }}
-              >
-                <card.icon size={18} style={{ color: card.color }} />
-              </div>
-            </div>
-            <p className="text-lg font-semibold text-gray-900 truncate">
-              {card.value}
-            </p>
-            <p className="text-xs text-gray-400 mt-0.5">{card.label}</p>
-          </div>
-        ))}
-      </div>
-
       {/* Revenue chart */}
       {revData.length > 0 && (
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
@@ -304,10 +264,15 @@ export default function AdminDashboard() {
                 tickLine={false}
               />
               <YAxis
+                domain={[0, "auto"]}
                 tick={{ fontSize: 10, fill: "#94a3b8" }}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`}
+                tickFormatter={(v) =>
+                  v >= 1000000
+                    ? `${(v / 1000000).toFixed(1)}tr`
+                    : `${(v / 1000).toFixed(0)}k`
+                }
               />
               <Tooltip content={<CustomTooltip />} />
               <Line
@@ -315,7 +280,8 @@ export default function AdminDashboard() {
                 dataKey="revenue"
                 stroke="#cc323f"
                 strokeWidth={2.5}
-                dot={{ r: 3, fill: "#cc323f" }}
+                dot={{ r: 2, fill: "#cc323f" }}
+                animationDuration={300}
               />
               <Line
                 type="monotone"
@@ -341,13 +307,11 @@ export default function AdminDashboard() {
           </h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-gray-50 rounded-xl p-4">
-              <p className="text-xs text-gray-500 mb-1">Xem sản phẩm</p>
+              <p className="text-xs text-gray-500 mb-1">Lượt truy cập</p>
               <p className="text-2xl font-bold text-gray-900">
-                {engagement.product_views.total}
+                {engagement.health_pings.toLocaleString()}
               </p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {engagement.product_views.daily_avg.toFixed(1)}/ngày
-              </p>
+              <p className="text-xs text-gray-400 mt-0.5">tổng lượt</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-4">
               <p className="text-xs text-gray-500 mb-1">Tìm kiếm</p>
@@ -409,24 +373,6 @@ export default function AdminDashboard() {
           </h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-gray-50 rounded-xl p-4">
-              <p className="text-xs text-gray-500 mb-1">Phiên</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {aiUsage.sessions.total}
-              </p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {aiUsage.sessions.active} đang hoạt động
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-4">
-              <p className="text-xs text-gray-500 mb-1">Tin nhắn</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {aiUsage.messages.total}
-              </p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {aiUsage.messages.daily_avg.toFixed(1)}/ngày
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-4">
               <p className="text-xs text-gray-500 mb-1">Tokens</p>
               <p className="text-2xl font-bold text-gray-900">
                 {(
@@ -441,7 +387,7 @@ export default function AdminDashboard() {
             <div className="bg-gray-50 rounded-xl p-4">
               <p className="text-xs text-gray-500 mb-1">Chi phí AI</p>
               <p className="text-2xl font-bold text-gray-900">
-                ${(aiUsage.tokens.total_cost_cents / 10000).toFixed(2)}
+                ${(aiUsage.tokens.total_cost_cents / 1000).toFixed(2)}
               </p>
               <p className="text-xs text-gray-400 mt-0.5">
                 {aiUsage.tokens.output_tokens.toLocaleString()} output tokens

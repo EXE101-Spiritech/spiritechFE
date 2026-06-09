@@ -429,23 +429,13 @@ export interface CartAbandonment {
 }
 
 export interface UserEngagement {
-  product_views: EngagementData;
+  health_pings: number;
   searches: SearchAnalytics;
   add_to_carts: EngagementData;
   cart_abandonment: CartAbandonment;
 }
 
 export interface AIUsage {
-  sessions: {
-    total: number;
-    active: number;
-    by_date: { date: string; count: number }[];
-  };
-  messages: {
-    total: number;
-    daily_avg: number;
-    by_date: { date: string; count: number }[];
-  };
   tokens: {
     input_tokens: number;
     output_tokens: number;

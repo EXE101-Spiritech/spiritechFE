@@ -90,23 +90,25 @@ export const adminApi = {
       .then((r) => r.data),
 
   /** Revenue over time */
-  revenue: (days = 30) =>
+  revenue: (params?: { days?: number; period?: string }) =>
     axiosClient
-      .get<RevenueResponse>("/admin/analytics/revenue", { params: { days } })
+      .get<any[]>("/admin/analytics/revenue", { params })
       .then((r) => r.data),
 
   /** Top selling products */
-  topProducts: (days = 30, limit = 10) =>
+  topProducts: (limit = 10) =>
     axiosClient
-      .get<TopProductItem[]>("/admin/analytics/top-products", {
-        params: { days, limit },
+      .get<any[]>("/admin/analytics/top-products", {
+        params: { limit },
       })
       .then((r) => r.data),
 
-  /** Orders grouped by status — returns array of {status, count} */
+  /** Orders grouped by status */
   ordersByStatus: () =>
     axiosClient
-      .get<OrdersByStatus>("/admin/analytics/orders-by-status")
+      .get<
+        { status: string; count: number }[]
+      >("/admin/analytics/orders-by-status")
       .then((r) => r.data),
 
   /** User engagement metrics */

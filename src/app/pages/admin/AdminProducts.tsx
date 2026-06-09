@@ -242,11 +242,15 @@ export default function AdminProducts() {
     setModalOpen(false);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const item = products.find((p) => p.id === id);
-    adminApi.deleteProduct(item?.productId || id).catch(() => {});
-    setProducts((ps) => ps.filter((p) => p.id !== id));
-    setDeleteId(null);
+    try {
+      await adminApi.deleteProduct(item?.productId || id);
+      setProducts((ps) => ps.filter((p) => p.id !== id));
+      setDeleteId(null);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Xóa sản phẩm thất bại");
+    }
   };
 
   const toggleStatus = (id: string) => {
