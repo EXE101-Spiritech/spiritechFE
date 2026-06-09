@@ -228,7 +228,7 @@ export default function About() {
             Khám Phá Sản Phẩm Của Chúng Tôi
           </h2>
           <p className="text-gray-500 mb-6">
-            Hàng trăm sản phẩm chất lượng, đúng phong tục, giao tận nơi nội
+            Hàng loạt các sản phẩm chất lượng, chuẩn văn hóa, giao tận nơi nội
             thành.
           </p>
           <Link
