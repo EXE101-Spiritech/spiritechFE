@@ -547,7 +547,7 @@ export default function AdminDashboard() {
               >
                 Sử dụng AI
               </h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
                   <p className="text-xs text-gray-500 mb-1">Tokens</p>
                   <p className="text-2xl font-bold text-gray-900">
@@ -574,6 +574,16 @@ export default function AdminDashboard() {
                     {(aiUsage.tokens?.output_tokens ?? 0).toLocaleString()}{" "}
                     output tokens
                   </p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs text-gray-500 mb-1">Tỉ lệ áp dụng AI</p>
+                  <p
+                    className="text-2xl font-bold"
+                    style={{ color: "#7c3aed" }}
+                  >
+                    {(aiUsage.adoption_rate ?? 68.4).toFixed(1)}%
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">(mock)</p>
                 </div>
               </div>
               {(aiUsage.tools || []).length > 0 && (

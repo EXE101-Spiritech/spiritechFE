@@ -447,6 +447,9 @@ export interface AIUsage {
     total_cost_cents: number;
   };
   tools: { tool_name: string; count: number; failures: number }[] | null;
+  adoption_rate?: number;
+  total_sessions?: number;
+  ai_sessions?: number;
 }
 
 // ── Error ──────────────────────────────────────────────────────────────────
