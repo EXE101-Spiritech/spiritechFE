@@ -451,7 +451,7 @@ export default function AdminDashboard() {
                     {(engagement.cart_abandonment?.rate ?? 0).toFixed(0)}%
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {engagement.cart_abandonment?.abandoned_count ?? 0} bỏ /{" "}
+                    {engagement.cart_abandonment?.abandoned_count ?? 0} bỏ giỏ /{" "}
                     {engagement.cart_abandonment?.completed_count ?? 0} hoàn tất
                   </p>
                 </div>
