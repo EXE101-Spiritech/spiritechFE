@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
-import { CheckCircle, Truck, Shield, Lock, Building2 } from "lucide-react";
+import {
+  CheckCircle,
+  Truck,
+  Shield,
+  Lock,
+  Building2,
+  Store,
+} from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../data";
@@ -52,6 +59,7 @@ export default function Checkout() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [payment, setPayment] = useState<"cod" | "bank">("cod");
+  const [pickup, setPickup] = useState(false);
   const [successOverlay, setSuccessOverlay] = useState<{
     orderId: string;
   } | null>(null);
@@ -309,93 +317,179 @@ export default function Checkout() {
                       fontWeight: 600,
                     }}
                   >
-                    Thông tin nhận hàng
+                    Hình thức nhận hàng
                   </h2>
-                  <p className="text-xs text-gray-400">
-                    Nhập thông tin người nhận
-                  </p>
+                  <p className="text-xs text-gray-400">Chọn cách nhận hàng</p>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label
-                    className="block text-sm text-gray-700 mb-1.5"
-                    style={{ fontWeight: 500 }}
-                  >
-                    Họ và tên *
-                  </label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => update("name", e.target.value)}
-                    placeholder="Nguyễn Văn A"
-                    className={inputClass("name")}
-                    {...fieldFocus("name")}
+              {/* Pickup / Delivery toggle */}
+              <div className="flex gap-3 mb-6">
+                <button
+                  onClick={() => setPickup(false)}
+                  className="flex-1 flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left"
+                  style={{
+                    borderColor: !pickup ? "#cc323f" : "#e2e8f0",
+                    backgroundColor: !pickup ? "#fdf4f3" : "white",
+                  }}
+                >
+                  <Truck
+                    className={`w-5 h-5 ${!pickup ? "text-[#cc323f]" : "text-gray-400"}`}
                   />
-                  {errors.name && (
-                    <p className="text-red-500 text-xs mt-1">{errors.name}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    className="block text-sm text-gray-700 mb-1.5"
-                    style={{ fontWeight: 500 }}
-                  >
-                    Số điện thoại *
-                  </label>
-                  <input
-                    type="tel"
-                    value={form.phone}
-                    onChange={(e) => update("phone", e.target.value)}
-                    placeholder="0912 345 678"
-                    className={inputClass("phone")}
-                    {...fieldFocus("phone")}
-                  />
-                  {errors.phone && (
-                    <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    className="block text-sm text-gray-700 mb-1.5"
-                    style={{ fontWeight: 500 }}
-                  >
-                    Địa chỉ giao hàng *
-                  </label>
-                  <textarea
-                    value={form.address}
-                    onChange={(e) => update("address", e.target.value)}
-                    placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố"
-                    rows={3}
-                    className={`${inputClass("address")} resize-none`}
-                    {...fieldFocus("address")}
-                  />
-                  {errors.address && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.address}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      Giao hàng tận nơi
                     </p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    className="block text-sm text-gray-700 mb-1.5"
-                    style={{ fontWeight: 500 }}
-                  >
-                    Ghi chú (không bắt buộc)
-                  </label>
-                  <textarea
-                    value={form.notes}
-                    onChange={(e) => update("notes", e.target.value)}
-                    placeholder="Ghi chú thêm cho người giao hàng..."
-                    rows={2}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none transition-all bg-gray-50 resize-none"
+                    <p className="text-xs text-gray-400">Miễn phí giao hàng</p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setPickup(true)}
+                  className="flex-1 flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left"
+                  style={{
+                    borderColor: pickup ? "#cc323f" : "#e2e8f0",
+                    backgroundColor: pickup ? "#fdf4f3" : "white",
+                  }}
+                >
+                  <Store
+                    className={`w-5 h-5 ${pickup ? "text-[#cc323f]" : "text-gray-400"}`}
                   />
-                </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      Nhận tại cửa hàng
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Nhận hàng trực tiếp tại shop
+                    </p>
+                  </div>
+                </button>
               </div>
+
+              {/* Shipping form — hidden when pickup is selected */}
+              {!pickup && (
+                <>
+                  <div className="flex items-center gap-3 mb-5">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm"
+                      style={{ backgroundColor: "#cc323f", fontWeight: 700 }}
+                    >
+                      1
+                    </div>
+                    <div>
+                      <h2
+                        style={{
+                          fontFamily: "Lora, serif",
+                          color: "#0f172a",
+                          fontSize: "1.1rem",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Thông tin nhận hàng
+                      </h2>
+                      <p className="text-xs text-gray-400">
+                        Nhập thông tin người nhận
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label
+                        className="block text-sm text-gray-700 mb-1.5"
+                        style={{ fontWeight: 500 }}
+                      >
+                        Họ và tên *
+                      </label>
+                      <input
+                        type="text"
+                        value={form.name}
+                        onChange={(e) => update("name", e.target.value)}
+                        placeholder="Nguyễn Văn A"
+                        className={inputClass("name")}
+                        {...fieldFocus("name")}
+                      />
+                      {errors.name && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.name}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label
+                        className="block text-sm text-gray-700 mb-1.5"
+                        style={{ fontWeight: 500 }}
+                      >
+                        Số điện thoại *
+                      </label>
+                      <input
+                        type="tel"
+                        value={form.phone}
+                        onChange={(e) => update("phone", e.target.value)}
+                        placeholder="0912 345 678"
+                        className={inputClass("phone")}
+                        {...fieldFocus("phone")}
+                      />
+                      {errors.phone && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.phone}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label
+                        className="block text-sm text-gray-700 mb-1.5"
+                        style={{ fontWeight: 500 }}
+                      >
+                        Địa chỉ giao hàng *
+                      </label>
+                      <textarea
+                        value={form.address}
+                        onChange={(e) => update("address", e.target.value)}
+                        placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố"
+                        rows={3}
+                        className={`${inputClass("address")} resize-none`}
+                        {...fieldFocus("address")}
+                      />
+                      {errors.address && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.address}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label
+                        className="block text-sm text-gray-700 mb-1.5"
+                        style={{ fontWeight: 500 }}
+                      >
+                        Ghi chú (không bắt buộc)
+                      </label>
+                      <textarea
+                        value={form.notes}
+                        onChange={(e) => update("notes", e.target.value)}
+                        placeholder="Ghi chú thêm cho người giao hàng..."
+                        rows={2}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none transition-all bg-gray-50 resize-none"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Pickup note */}
+              {pickup && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-center">
+                  <Store className="w-8 h-8 mx-auto mb-2 text-amber-600" />
+                  <p className="text-sm font-medium text-amber-800 mb-1">
+                    Quý khách vui lòng đến nhận hàng tại cửa hàng
+                  </p>
+                  <p className="text-xs text-amber-600">
+                    Địa chỉ: số 687 Tô Ngọc Vân, Tam Bình, Thủ Đức
+                  </p>{" "}
+                </div>
+              )}
             </div>
 
             {/* Step 2: Payment method */}
