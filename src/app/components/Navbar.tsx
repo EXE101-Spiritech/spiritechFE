@@ -320,11 +320,6 @@ export function Navbar() {
                               onMouseDown={() => handleSelect(item)}
                               className="w-full flex items-center gap-3 px-4 py-2 hover:bg-[#fdf4f3] transition-colors text-left"
                             >
-                              <img
-                                src={item.image}
-                                alt={item.name}
-                                className="w-9 h-9 object-cover rounded-lg flex-shrink-0"
-                              />
                               <div className="flex-1 min-w-0">
                                 <p
                                   className="text-sm text-gray-800 truncate"
@@ -353,12 +348,6 @@ export function Navbar() {
                                     {item.type === "combo"
                                       ? "Combo"
                                       : "Sản phẩm"}
-                                  </span>
-                                  <span
-                                    className="text-xs"
-                                    style={{ color: "#cc323f" }}
-                                  >
-                                    {formatCurrency(item.price)}
                                   </span>
                                 </div>
                               </div>
@@ -609,11 +598,6 @@ export function Navbar() {
                             onMouseDown={() => handleSelect(item)}
                             className="w-full flex items-center gap-3 px-4 py-2.5 active:bg-[#fdf4f3] hover:bg-[#fdf4f3] transition-colors text-left"
                           >
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="w-9 h-9 object-cover rounded-lg flex-shrink-0"
-                            />
                             <div className="flex-1 min-w-0">
                               <p
                                 className="text-sm text-gray-800 truncate"
@@ -640,12 +624,6 @@ export function Navbar() {
                                   }}
                                 >
                                   {item.type === "combo" ? "Combo" : "Sản phẩm"}
-                                </span>
-                                <span
-                                  className="text-xs"
-                                  style={{ color: "#cc323f" }}
-                                >
-                                  {formatCurrency(item.price)}
                                 </span>
                               </div>
                             </div>
