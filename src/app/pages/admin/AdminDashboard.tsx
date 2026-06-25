@@ -456,7 +456,7 @@ export default function AdminDashboard() {
                   </p>
                 </div>
               </div>
-              {engagement.searches.top_queries.length > 0 && (
+              {engagement.searches?.top_queries?.length > 0 && (
                 <div className="mt-4">
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
                     Top tìm kiếm
