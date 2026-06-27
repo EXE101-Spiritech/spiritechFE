@@ -114,15 +114,7 @@ interface Message {
   role: "bot" | "user";
   text: string;
   time: Date;
-  quickReplies?: string[];
 }
-
-const QUICK_REPLIES_INIT = [
-  "Xem combo cúng rằm 🕯️",
-  "Phí vận chuyển bao nhiêu?",
-  "Cách đặt hàng",
-  "Chính sách đổi trả",
-];
 
 const SESSION_KEY = "spiritech_chat_session";
 function defaultGreeting(): Message[] {
@@ -132,7 +124,6 @@ function defaultGreeting(): Message[] {
       role: "bot",
       text: "Xin chào! 🙏 Chào mừng đến với **SpiriTech**.\n\nTôi là **Trợ lý An Tâm**, sẵn sàng giúp bạn về:\n• Sản phẩm & combo đồ cúng\n• Tư vấn nghi lễ cúng bái\n• Đặt hàng & vận chuyển\n\nBạn cần giúp gì hôm nay?",
       time: new Date(),
-      quickReplies: QUICK_REPLIES_INIT,
     },
   ];
 }
@@ -284,7 +275,6 @@ export function ChatBot() {
       role: "bot",
       text: "Xin chào! 🙏 Chào mừng đến với **SpiriTech**.\n\nTôi là **Trợ lý An Tâm**, sẵn sàng giúp bạn về:\n• Sản phẩm & combo đồ cúng\n• Tư vấn nghi lễ cúng bái\n• Đặt hàng & vận chuyển\n\nBạn cần giúp gì hôm nay?",
       time: new Date(),
-      quickReplies: QUICK_REPLIES_INIT,
     },
   ]);
   const [sessionId, setSessionId] = useState<string | null>(() => {
@@ -465,7 +455,6 @@ export function ChatBot() {
         role: "bot",
         text: "Cuộc trò chuyện mới đã bắt đầu! 🙏\n\nTôi là **Trợ lý An Tâm** của **SpiriTech**, luôn sẵn sàng hỗ trợ bạn về sản phẩm, đặt hàng và nghi lễ cúng bái.\n\nBạn cần giúp gì ạ?",
         time: new Date(),
-        quickReplies: QUICK_REPLIES_INIT,
       },
     ]);
   };
@@ -928,34 +917,6 @@ export function ChatBot() {
                       minute: "2-digit",
                     })}
                   </span>
-
-                  {/* Quick replies */}
-                  {msg.role === "bot" && msg.quickReplies && (
-                    <div className="flex flex-wrap gap-1.5 mt-0.5">
-                      {msg.quickReplies.map((qr, i) => (
-                        <button
-                          key={i}
-                          onClick={() => sendMessage(qr)}
-                          className="text-xs px-2.5 py-1 rounded-full border transition-all hover:text-white"
-                          style={{
-                            borderColor: "#cc323f",
-                            color: "#cc323f",
-                            backgroundColor: "white",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#cc323f";
-                            e.currentTarget.style.color = "white";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "white";
-                            e.currentTarget.style.color = "#cc323f";
-                          }}
-                        >
-                          {qr}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
